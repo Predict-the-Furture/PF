@@ -14,10 +14,11 @@ def train():
     train_loader = DataLoader(dataset=dataset, batch_size=64, shuffle=True, num_workers=0)
     evaluate_loader = DataLoader(dataset=dataset, batch_size=64, shuffle=True, num_workers=0)
 
-    model = Model(6, 60, 4).to(device)
+    model = Model(6, 60, 4)
+    model = model.to(device)
 
     criterion = torch.nn.MSELoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
 
     for epoch in range(200):
         print('-------------------------------------------------------')
@@ -26,7 +27,7 @@ def train():
             inputs, labels = Variable(inputs), Variable(labels)
             inputs, labels = inputs.to(device), labels.to(device)
 
-            y_pred = model(inputs).to(device)
+            y_pred = model(inputs)
 
             loss = criterion(y_pred, labels)
             optimizer.zero_grad()
