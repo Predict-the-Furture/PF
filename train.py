@@ -24,6 +24,8 @@ def train():
         for i, data in enumerate(train_loader):
             inputs, labels = data
             inputs, labels = Variable(inputs), Variable(labels)
+            inputs, labels = inputs.to(device), labels.to(device)
+            
             y_pred = model(inputs).to(device)
 
             loss = criterion(y_pred, labels)
