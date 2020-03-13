@@ -25,7 +25,7 @@ def train():
             inputs, labels = data
             inputs, labels = Variable(inputs), Variable(labels)
             inputs, labels = inputs.to(device), labels.to(device)
-            
+
             y_pred = model(inputs).to(device)
 
             loss = criterion(y_pred, labels)
@@ -34,7 +34,9 @@ def train():
             optimizer.step()
             print(epoch, i, loss.item())
 
-        summary.add_scalar('loss', evaluate(model, evaluate_loader), epoch * len(train_loader) + i)
+        accuracy = evaluate(model, evaluate_loader)
+        summary.add_scalar('loss', accuracy, epoch * len(train_loader) + i)
+        print("Epoch: {}, Accuracy: {}".format(epoch, accuracy))
         summary.close()
 
 def evaluate(model, validation_loader):
