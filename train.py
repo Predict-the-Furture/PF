@@ -24,7 +24,7 @@ def train():
         for i, data in enumerate(train_loader):
             inputs, labels = data
             inputs, labels = Variable(inputs), Variable(labels)
-            y_pred = model(inputs)
+            y_pred = model(inputs).to(device)
 
             loss = criterion(y_pred, labels)
             optimizer.zero_grad()
@@ -35,16 +35,15 @@ def train():
         summary.add_scalar('loss', evaluate(model, evaluate_loader), epoch * len(train_loader) + i)
         summary.close()
 
-def evaluate(model, validation_loader, use_cuda=False):
+def evaluate(model, validation_loader):
     model.eval()
     with torch.no_grad():
         acc = .0
         for i, data in enumerate(validation_loader):
             X = data[0]
             y = data[1]
-            if use_cuda:
-                X = X.cuda()
-                y = y.cuda()
+            X = X.to(device)
+            y = y.to(device)
             predicted = model(X)
             acc+=(predicted.round() == y).sum()/float(predicted.shape[0])
     model.train()
