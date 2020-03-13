@@ -16,7 +16,7 @@ def train():
 
     model = Model(6, 60, 4).to(device)
 
-    criterion = torch.nn.MSELoss(size_average=True)
+    criterion = torch.nn.MSELoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
 
     for epoch in range(200):
@@ -32,7 +32,6 @@ def train():
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            print(epoch, i, loss.item())
 
         accuracy = evaluate(model, evaluate_loader)
         summary.add_scalar('loss', accuracy, epoch * len(train_loader) + i)
