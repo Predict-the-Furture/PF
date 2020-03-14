@@ -1,4 +1,6 @@
 import torch
+
+from datetime import datetime
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
@@ -9,7 +11,8 @@ from data_loader import DiabetesDataset
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def train():
-    summary = SummaryWriter()
+    summary = SummaryWriter('runs/' + datetime.today().strftime("%Y-%m-%d-%H%M%S"))
+
     dataset = DiabetesDataset()
     train_loader = DataLoader(dataset=dataset, batch_size=64, shuffle=True, num_workers=0)
     evaluate_loader = DataLoader(dataset=dataset, batch_size=64, shuffle=True, num_workers=0)
