@@ -25,8 +25,6 @@ def train():
         for i, data in enumerate(train_loader):
             inputs, labels = data
             inputs, labels = Variable(inputs), Variable(labels)
-            inputs, labels = inputs.to(device), labels.to(device)
-
             y_pred = model(inputs)
 
             loss = criterion(y_pred, labels)
@@ -46,7 +44,6 @@ def evaluate(model, validation_loader, criterion):
         for i, data in enumerate(validation_loader):
             inputs, labels = data
             inputs, labels = Variable(inputs), Variable(labels)
-            inputs, labels = inputs.to(device), labels.to(device)
 
             predicted = model(inputs)
             loss = criterion(predicted, labels)

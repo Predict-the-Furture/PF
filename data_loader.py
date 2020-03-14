@@ -19,6 +19,8 @@ config = {
     "port": 3306
 }
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 class DiabetesDataset(Dataset):
     def __init__(self):
 
@@ -45,7 +47,7 @@ class DiabetesDataset(Dataset):
         self.data = min_max_scaler.fit_transform(self.data)
 
     def __getitem__(self, index):
-        result = torch.FloatTensor(self.data[index: index + 30])
+        result = torch.FloatTensor(self.data[index: index + 30]).to(device)
         return result[:-1], result[-1]
 
     def __len__(self):
