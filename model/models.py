@@ -25,7 +25,6 @@ class Model(nn.Module):
         hidden, cell = self.init_hidden(x)
         output, (hidden, cell) = self.lstm(x, (hidden, cell))
 
-        linear = self.linear(output)
-        output = F.softmax(linear(output), 1)
+        output = F.softmax(self.linear(output), 1)
         output = output[:, -1, :]
         return output
