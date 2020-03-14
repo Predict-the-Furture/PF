@@ -34,24 +34,25 @@ def train():
             loss.backward()
             optimizer.step()
 
-        accuracy = evaluate(model, evaluate_loader)
+        accuracy = evaluate(model, evaluate_loader, criterion)
         summary.add_scalar('loss', accuracy, epoch * len(train_loader) + i)
         print("Epoch: {}, Accuracy: {}".format(epoch, accuracy))
         summary.close()
 
-def evaluate(model, validation_loader):
-    model.eval()
+def evaluate(model, validation_loader, criterion):
     with torch.no_grad():
         acc = .0
+        iterations = 0
         for i, data in enumerate(validation_loader):
-            X = data[0]
-            y = data[1]
-            X = X.to(device)
-            y = y.to(device)
-            predicted = model(X)
-            acc+=(predicted.round() == y).sum()/float(predicted.shape[0])
-    model.train()
-    return (acc/(i+1)).detach().item()
+            inputs, labels = data
+            inputs, labels = Variable(inputs), Variable(labels)
+            inputs, labels = inputs.to(device), labels.to(device)
+
+            predicted = model(inputs)
+            loss = criterion(predicted, labels)
+            acc += loss
+            iterations += 1
+    return acc / iterations
 
 if __name__ == '__main__':
     train()
