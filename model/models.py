@@ -14,6 +14,7 @@ class Model(nn.Module):
         self.num_layers = num_layers
 
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, bias=True,batch_first=True)
+        self.linear = nn.Linear(self.hidden_size, self.input_size)
 
 
     def init_hidden(self, x):
@@ -24,7 +25,7 @@ class Model(nn.Module):
         hidden, cell = self.init_hidden(x)
         output, (hidden, cell) = self.lstm(x, (hidden, cell))
 
-        linear = nn.Linear(self.hidden_size, self.input_size)
+        linear = self.linear(output)
         output = F.softmax(linear(output), 1)
         output = output[:, -1, :]
         return output
