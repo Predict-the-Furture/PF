@@ -31,7 +31,7 @@ class Trainer():
         self.train_loader = DataLoader(dataset=self.dataset, batch_size=64, shuffle=True, num_workers=0)
         self.evaluate_loader = DataLoader(dataset=self.dataset, batch_size=64, shuffle=True, num_workers=0)
 
-        self.model = Model(6, 60, 4)
+        self.model = Model(6, 60, 4, self.device)
         self.model = self.model.to(self.device)
 
         self.criterion =nn.MSELoss(reduction='sum')
