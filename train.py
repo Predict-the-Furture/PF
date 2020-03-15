@@ -57,14 +57,17 @@ class Trainer():
                     self.optimizer.step()
                 else:
                     xm.optimizer_step(self.optimizer)
+                    xm.mark_step()
 
             if (self.epoch + 1) % 50 == 0:
+                print('a')
                 accuracy = self.evaluate()
                 self.summary.add_scalar('loss', accuracy, self.epoch)
                 print("Epoch: {}, Accuracy: {}".format(self.epoch, accuracy))
                 self.summary.close()
 
             if (self.epoch + 1) % 100 == 0:
+                print('b')
                 self.save_checkpoint()
 
     def save_checkpoint(self):
