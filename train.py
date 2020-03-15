@@ -17,10 +17,12 @@ from data_loader import DiabetesDataset
 
 class Trainer():
     def __init__(self, args):
+        self.tpu = False
         if args.device in ['cpu', 'gpu']:
             self.device = args.device
         elif args.device == 'tpu':
             self.device = xm.xla_device()
+            self.tpu = True
         else:
             exit(0)
 
@@ -53,7 +55,7 @@ class Trainer():
                 loss = self.criterion(y_pred, labels)
                 self.optimizer.zero_grad()
                 loss.backward()
-                if not self.device == 'tpu':
+                if self.tpu == False:
                     self.optimizer.step()
                 else:
                     xm.optimizer_step(self.optimizer)
