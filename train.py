@@ -109,5 +109,5 @@ if __name__ == '__main__':
 
     args = args.parse_args()
     trainer = Trainer(args)
-    trainer.train()
-   # xmp.spawn(trainer.train(), nprocs=8, start_method='fork')
+    #trainer.train()
+    xmp.spawn(trainer.train(), nprocs=8, start_method='fork')
