@@ -16,9 +16,9 @@ from data_loader import DiabetesDataset
 
 class Trainer():
     def __init__(self, args):
-        if args in ['cpu', 'gpu']:
+        if args.device in ['cpu', 'gpu']:
             self.device = args.device
-        elif args == 'tpu':
+        elif args.device == 'tpu':
             self.device = xm.xla_device()
         else:
             exit(0)
