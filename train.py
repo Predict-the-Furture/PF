@@ -13,9 +13,9 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Trainer():
     def __init__(self):
-        self.checkpoint_dir = 'saved'
+        self.checkpoint_dir = './saved'
 
-        self.summary = SummaryWriter('runs/' + datetime.today().strftime("%Y-%m-%d-%H%M%S"))
+        self.summary = SummaryWriter('./runs/' + datetime.today().strftime("%Y-%m-%d-%H%M%S"))
 
         self.dataset = DiabetesDataset()
         self.train_loader = DataLoader(dataset=self.dataset, batch_size=64, shuffle=True, num_workers=0)
