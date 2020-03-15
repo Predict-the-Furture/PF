@@ -29,7 +29,7 @@ class Trainer():
 
     def train(self):
 
-        for self.epoch in range(200):
+        for self.epoch in range(1000):
             print('-------------------------------------------------------')
             for i, data in enumerate(self.train_loader):
                 inputs, labels = data
@@ -40,11 +40,12 @@ class Trainer():
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
-
-            accuracy = self.evaluate()
-            self.summary.add_scalar('loss', accuracy, self.epoch * len(self.train_loader) + i)
-            print("Epoch: {}, Accuracy: {}".format(self.epoch, accuracy))
-            self.summary.close()
+            
+            if self.epoch % 50 == 0:
+                accuracy = self.evaluate()
+                self.summary.add_scalar('loss', accuracy, self.epoch * len(self.train_loader) + i)
+                print("Epoch: {}, Accuracy: {}".format(self.epoch, accuracy))
+                self.summary.close()
 
             if self.epoch % 100 == 0:
                 self.save_checkpoint()
