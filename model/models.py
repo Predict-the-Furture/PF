@@ -3,6 +3,7 @@ import torch.nn.functional as F
 from torch import nn
 from torch.autograd import Variable
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Model(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers):
@@ -17,8 +18,8 @@ class Model(nn.Module):
 
 
     def init_hidden(self, x):
-        return (Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size)),
-                Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size)))
+        return (Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device)),
+                Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device)))
 
     def forward(self, x):
         hidden, cell = self.init_hidden(x)

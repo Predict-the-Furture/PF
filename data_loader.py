@@ -35,7 +35,7 @@ class DiabetesDataset(Dataset):
         for item in tqdm(self.db_tables, desc='Count num'):
             self.cursor.execute("SELECT COUNT(*) FROM _" + item)
             self.maria.commit()
-            self.len += self.cursor.fetchone()[0] - 30
+            self.len += self.cursor.fetchone()[0] - 31
 
         self.data = []
         for item in tqdm(self.db_tables, desc='Retrieve all stock data'):
@@ -43,12 +43,27 @@ class DiabetesDataset(Dataset):
             self.maria.commit()
             self.data += list([open, high, low, close, volume, amount] for (_, open, high, low, close, volume, amount) in self.cursor.fetchall())
 
-        min_max_scaler = MinMaxScaler()
-        self.data = min_max_scaler.fit_transform(self.data)
+        self.min_max_scaler = MinMaxScaler()
+        self.data = self.min_max_scaler.fit_transform(self.data)
 
     def __getitem__(self, index):
-        result = torch.FloatTensor(self.data[index: index + 30]).to(device)
+        result = torch.FloatTensor(self.data[index: index + 31]).to(device)
         return result[:-1], result[-1]
 
     def __len__(self):
         return self.len
+
+def load_test_stocks():
+    maria = pymysql.connect(**config)
+    cursor = maria.cursor()
+    cursor.execute("USE daily_stock")
+
+    db_tables = ['000020']
+    data = []
+
+    for item in tqdm(db_tables, desc='Retrieve all stock data'):
+        cursor.execute("SELECT * FROM _" + item + " ORDER BY date ASC")
+        maria.commit()
+        data += list([open, high, low, close, volume, amount] for (_, open, high, low, close, volume, amount) in cursor.fetchall())
+
+    return data
