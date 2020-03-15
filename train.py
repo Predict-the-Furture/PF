@@ -1,4 +1,8 @@
+import argparse
 import torch
+import torch_xla
+import torch_xla.core.xla_model as xm
+import torch_xla.distributed.parallel_loader as pl
 
 from datetime import datetime
 from torch.autograd import Variable
@@ -9,10 +13,16 @@ from tensorboardX import SummaryWriter
 from model import Model
 from data_loader import DiabetesDataset
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Trainer():
-    def __init__(self):
+    def __init__(self, args):
+        if args in ['cpu', 'gpu']:
+            self.device = args.device
+        elif args == 'tpu':
+            self.device = xm.xla_device()
+        else:
+            exit(0)
+
         self.checkpoint_dir = 'saved'
 
         self.summary = SummaryWriter('runs/' + datetime.today().strftime("%Y-%m-%d-%H%M%S"))
@@ -22,7 +32,7 @@ class Trainer():
         self.evaluate_loader = DataLoader(dataset=self.dataset, batch_size=64, shuffle=True, num_workers=0)
 
         self.model = Model(6, 60, 4)
-        self.model = self.model.to(device)
+        self.model = self.model.to(self.device)
 
         self.criterion =nn.MSELoss(reduction='sum')
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0001)
@@ -30,15 +40,21 @@ class Trainer():
     def train(self):
 
         for self.epoch in range(1000):
+            para_train_loader = pl.ParallelLoader(self.train_loader, [self.device]).per_device_loader(self.device)
             for i, data in enumerate(self.train_loader):
                 inputs, labels = data
                 inputs, labels = Variable(inputs), Variable(labels)
+                inputs, labels = inputs.to(self.device), labels.to(self.device)
+
                 y_pred = self.model(inputs)
 
                 loss = self.criterion(y_pred, labels)
                 self.optimizer.zero_grad()
                 loss.backward()
-                self.optimizer.step()
+                if not self.device == 'tpu':
+                    self.optimizer.step()
+                else:
+                    xm.optimizer_step(self.optimizer)
 
             if self.epoch + 1 % 50 == 0:
                 accuracy = self.evaluate()
@@ -63,10 +79,12 @@ class Trainer():
     def evaluate(self):
         self.model.eval()
         with torch.no_grad():
+            para_train_loader = pl.ParallelLoader(self.evaluate_loader, [self.device]).per_device_loader(self.device)
             total_loss = 0.
             for i, data in enumerate(self.evaluate_loader):
                 inputs, labels = data
                 inputs, labels = Variable(inputs), Variable(labels)
+                inputs, labels = inputs.to(self.device), labels.to(self.device)
 
                 predicted = self.model(inputs)
                 loss = self.criterion(predicted, labels)
@@ -79,5 +97,9 @@ class Trainer():
         return total_loss / n_samples
 
 if __name__ == '__main__':
-    trainer = Trainer()
-    trainer.train()
+    args = argparse.ArgumentParser(description='Trainer')
+    args.add_argument('-d', '--device', default='cpu', type=str)
+
+    args = args.parse_args()
+    trainer = Trainer(args)
+    xmp.spawn(trainer.train(), nprocs=8, start_method='fork')

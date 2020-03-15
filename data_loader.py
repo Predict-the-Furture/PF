@@ -47,7 +47,7 @@ class DiabetesDataset(Dataset):
         self.data = self.min_max_scaler.fit_transform(self.data)
 
     def __getitem__(self, index):
-        result = torch.FloatTensor(self.data[index: index + 31]).to(device)
+        result = torch.FloatTensor(self.data[index: index + 31])
         return result[:-1], result[-1]
 
     def __len__(self):

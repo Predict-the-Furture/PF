@@ -40,6 +40,7 @@ batch_predicted = []
 
 with torch.no_grad():
     for i, (data, target) in enumerate(tqdm(data_loader)):
+
         output = model(data)
 
         loss = criterion(output, target)
