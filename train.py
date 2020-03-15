@@ -3,6 +3,7 @@ import torch
 import torch_xla
 import torch_xla.core.xla_model as xm
 import torch_xla.distributed.parallel_loader as pl
+import torch_xla.distributed.xla_multiprocessing as xmp
 
 from datetime import datetime
 from torch.autograd import Variable
