@@ -41,6 +41,7 @@ class Trainer():
     def train(self):
 
         for self.epoch in range(1000):
+            print(self.epoch)
             para_train_loader = pl.ParallelLoader(self.train_loader, [self.device]).per_device_loader(self.device)
             for i, data in enumerate(self.train_loader):
                 inputs, labels = data
@@ -57,13 +58,13 @@ class Trainer():
                 else:
                     xm.optimizer_step(self.optimizer)
 
-            if self.epoch + 1 % 50 == 0:
+            if (self.epoch + 1) % 50 == 0:
                 accuracy = self.evaluate()
                 self.summary.add_scalar('loss', accuracy, self.epoch)
                 print("Epoch: {}, Accuracy: {}".format(self.epoch, accuracy))
                 self.summary.close()
 
-            if self.epoch + 1 % 100 == 0:
+            if (self.epoch + 1) % 100 == 0:
                 self.save_checkpoint()
 
     def save_checkpoint(self):
