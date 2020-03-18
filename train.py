@@ -20,10 +20,6 @@ class Trainer():
         elif args.device == 'gpu':
             self.device = 'cuda:0'
         elif args.device == 'tpu':
-            import torch_xla
-            import torch_xla.core.xla_model as xm
-            import torch_xla.distributed.parallel_loader as pl
-            import torch_xla.distributed.xla_multiprocessing as xmp
             self.device = xm.xla_device()
             self.tpu = True
         else:
@@ -119,4 +115,11 @@ if __name__ == '__main__':
     args = args.parse_args()
     trainer = Trainer(args)
     #trainer.train()
-    xmp.spawn(trainer.train(), nprocs=8, start_method='fork')
+    if args.device == 'tpu':
+        import torch_xla
+        import torch_xla.core.xla_model as xm
+        import torch_xla.distributed.parallel_loader as pl
+        import torch_xla.distributed.xla_multiprocessing as xmp
+        xmp.spawn(trainer.train(), nprocs=8, start_method='fork')
+    else:
+        trainer = Trainer(args)
