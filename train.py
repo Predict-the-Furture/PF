@@ -15,8 +15,10 @@ from data_loader import DiabetesDataset
 class Trainer():
     def __init__(self, args):
         self.tpu = False
-        if args.device in ['cpu', 'gpu']:
-            self.device = args.device
+        if args.device == 'cpu':
+            self.device = 'cpu'
+        elif args.device == 'gpu':
+            self.device = 'cuda:0'
         elif args.device == 'tpu':
             import torch_xla
             import torch_xla.core.xla_model as xm
