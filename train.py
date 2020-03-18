@@ -1,10 +1,6 @@
 import time
 import argparse
 import torch
-import torch_xla
-import torch_xla.core.xla_model as xm
-import torch_xla.distributed.parallel_loader as pl
-import torch_xla.distributed.xla_multiprocessing as xmp
 
 from datetime import datetime
 from torch.autograd import Variable
@@ -22,6 +18,10 @@ class Trainer():
         if args.device in ['cpu', 'gpu']:
             self.device = args.device
         elif args.device == 'tpu':
+            import torch_xla
+            import torch_xla.core.xla_model as xm
+            import torch_xla.distributed.parallel_loader as pl
+            import torch_xla.distributed.xla_multiprocessing as xmp
             self.device = xm.xla_device()
             self.tpu = True
         else:
