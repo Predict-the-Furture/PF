@@ -1,4 +1,5 @@
 import time
+import importlib
 import argparse
 import torch
 
@@ -11,6 +12,12 @@ from tensorboardX import SummaryWriter
 from model import Model
 from data_loader import DiabetesDataset
 
+tpu_check = importlib.find_loader('torch_xla')
+if tpu_check is not None:
+    import torch_xla
+    import torch_xla.core.xla_model as xm
+    import torch_xla.distributed.parallel_loader as pl
+    import torch_xla.distributed.xla_multiprocessing as xmp
 
 class Trainer():
     def __init__(self, args):
@@ -20,9 +27,6 @@ class Trainer():
         elif args.device == 'gpu':
             self.device = 'cuda:0'
         elif args.device == 'tpu':
-            import torch_xla
-            import torch_xla.core.xla_model as xm
-            import torch_xla.distributed.parallel_loader as pl
             self.device = xm.xla_device()
             self.tpu = True
         else:
@@ -120,7 +124,6 @@ if __name__ == '__main__':
     trainer = Trainer(args)
 
     if args.device == 'tpu':
-        import torch_xla.distributed.xla_multiprocessing as xmp
         xmp.spawn(trainer.train(), nprocs=8, start_method='fork')
     else:
         trainer.train()
