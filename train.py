@@ -114,7 +114,7 @@ if __name__ == '__main__':
 
     args = args.parse_args()
     trainer = Trainer(args)
-    #trainer.train()
+
     if args.device == 'tpu':
         import torch_xla
         import torch_xla.core.xla_model as xm
@@ -122,4 +122,4 @@ if __name__ == '__main__':
         import torch_xla.distributed.xla_multiprocessing as xmp
         xmp.spawn(trainer.train(), nprocs=8, start_method='fork')
     else:
-        trainer = Trainer(args)
+        trainer.train()
