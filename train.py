@@ -1,3 +1,4 @@
+import time
 import argparse
 import torch
 import torch_xla
@@ -43,8 +44,11 @@ class Trainer():
     def train(self):
 
         for self.epoch in range(1000):
+            start = time.time()
             print(self.epoch)
-            para_train_loader = pl.ParallelLoader(self.train_loader, [self.device]).per_device_loader(self.device)
+            if self.tpu == True:
+                para_train_loader = pl.ParallelLoader(self.train_loader, [self.device]).per_device_loader(self.device)
+
             for i, data in enumerate(self.train_loader):
                 inputs, labels = data
                 inputs, labels = Variable(inputs), Variable(labels)
@@ -61,6 +65,8 @@ class Trainer():
                     xm.optimizer_step(self.optimizer)
                     xm.mark_step()
 
+            print("time: ", time.time() - start)
+
             if (self.epoch + 1) % 50 == 0:
                 print('a')
                 accuracy = self.evaluate()
@@ -71,6 +77,7 @@ class Trainer():
             if (self.epoch + 1) % 100 == 0:
                 print('b')
                 self.save_checkpoint()
+
 
     def save_checkpoint(self):
         state = {
