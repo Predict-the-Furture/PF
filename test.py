@@ -23,17 +23,17 @@ data_loader = DataLoader(dataset=dataset, batch_size=64, shuffle=False, num_work
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-checkpoint = torch.load('saved/checkpoint-epoch0.pth', map_location=torch.device('cpu'))
+checkpoint = torch.load('saved/checkpoint-epoch0 (1).pth')
 state_dict = checkpoint['state_dict']
 
-model = Model(6, 60, 4, device)
+model = Model(6, 60, 2, device)
 model.load_state_dict(state_dict)
 
 model = model.to(device)
 model.eval()
 
 total_loss = 0.0
-criterion = nn.MSELoss(reduction='sum')
+criterion = nn.NLLLoss()
 
 batch_real_data = []
 batch_predicted = []
