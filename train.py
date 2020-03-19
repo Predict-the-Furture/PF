@@ -71,7 +71,7 @@ class Trainer():
             if (self.epoch + 1) % 50 == 0:
                 accuracy = self.evaluate()
                 self.summary.add_scalar('loss', accuracy, self.epoch + 1)
-                print("{} epoch in {}s".format(self.epoch + 1, time.time() - start))
+                print("{} epoch, accuracy: {} in {}s".format(self.epoch + 1, accuracy, time.time() - start))
                 start = time.time()
                 self.summary.close()
 
@@ -119,6 +119,6 @@ if __name__ == '__main__':
     trainer = Trainer(args)
 
     if args.device == 'tpu':
-        xmp.spawn(trainer.train(), nprocs=8, start_method='fork')
+        xmp.spawn(trainer.train(), start_method='fork')
     else:
         trainer.train()
