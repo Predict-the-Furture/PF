@@ -23,7 +23,7 @@ data_loader = DataLoader(dataset=dataset, batch_size=64, shuffle=False, num_work
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-checkpoint = torch.load('saved/checkpoint-epoch1000.pth')
+checkpoint = torch.load('saved/checkpoint-epoch200.pth', map_location='cpu')
 state_dict = checkpoint['state_dict']
 
 model = Model(6, 60, 4, device)
@@ -53,7 +53,7 @@ with torch.no_grad():
 
     n_samples = len(data_loader.sampler)
     loss = total_loss / n_samples
-    print('Loss: {}'.format(loss))
+    print('{} Loss: {}'.format(total_loss, loss))
 
 real_data = vstack(batch_real_data)
 predicted = vstack(batch_predicted)
