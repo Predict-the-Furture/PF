@@ -57,7 +57,6 @@ class Trainer():
                 y_pred = self.model(inputs)
 
                 loss = self.criterion(y_pred, labels)
-                print(loss)
                 self.optimizer.zero_grad()
                 loss.backward()
                 if self.tpu == False:
