@@ -44,7 +44,7 @@ class Trainer():
         self.model = Model(6, 60, 2, self.device)
         self.model = self.model.to(self.device)
 
-        self.criterion =nn.NLLLoss()
+        self.criterion =nn.Adam()
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=0.001)
 
     def train(self):
@@ -58,7 +58,8 @@ class Trainer():
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
 
                 y_pred = self.model(inputs)
-                loss = self.criterion(y_pred.long(), labels.long())
+                loss = self.criterion(y_pred, labels)
+                print(loss)
                 self.optimizer.zero_grad()
                 loss.backward()
                 if self.tpu == False:
