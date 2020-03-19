@@ -121,7 +121,4 @@ if __name__ == '__main__':
     args = args.parse_args()
     trainer = Trainer(args)
 
-    if args.device == 'tpu':
-        xmp.spawn(trainer.train(), start_method='fork')
-    else:
-        trainer.train()
+    trainer.train()
