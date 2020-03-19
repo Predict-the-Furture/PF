@@ -83,7 +83,7 @@ class Trainer():
     def save_checkpoint(self):
         state = {
             'epoch': self.epoch,
-            'state_dict': self.model.state_dict(),
+            'state_dict': self.model._models[0].state_dict(),
             'optimizer': self.optimizer.state_dict()
         }
 
