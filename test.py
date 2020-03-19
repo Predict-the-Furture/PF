@@ -26,7 +26,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 checkpoint = torch.load('saved/checkpoint-epoch200.pth', map_location=torch.device('cpu'))
 state_dict = checkpoint['state_dict']
 
-model = Model(6, 60, 4)
+model = Model(6, 60, 4, device)
 model.load_state_dict(state_dict)
 
 model = model.to(device)
@@ -77,6 +77,7 @@ axes[0].get_xaxis().set_visible(False)
 
 arange = list([i] for i in range(real_data.shape[0]))
 candlestick_ohlc(axes[0], np.hstack([arange, real_data[:, :4]]), colorup='r', colordown='b')
+candlestick_ohlc(axes[0], np.hstack([arange, predicted[:, :4]]), colorup='y', colordown='m')
 
 axes[1].bar(np.arange(real_data.shape[0]), real_data[:, 4], color='k', align='center')
 plt.tight_layout()

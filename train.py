@@ -47,9 +47,8 @@ class Trainer():
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0001)
 
     def train(self):
-
+        start = time.time()
         for self.epoch in range(1000):
-            start = time.time()
             print(self.epoch)
             if self.tpu == True:
                 self.train_loader = pl.ParallelLoader(self.train_loader, [self.device]).per_device_loader(self.device)
@@ -76,11 +75,11 @@ class Trainer():
                 print('a')
                 accuracy = self.evaluate()
                 self.summary.add_scalar('loss', accuracy, self.epoch)
-                print("Epoch: {}, Accuracy: {}".format(self.epoch, accuracy))
+                print("{} epoch in {}s".format(self.epoch, time.time() - start))
+                start = time.time()
                 self.summary.close()
 
             if (self.epoch + 1) % 100 == 0:
-                print('b')
                 self.save_checkpoint()
 
 
@@ -123,5 +122,7 @@ if __name__ == '__main__':
     args = args.parse_args()
     trainer = Trainer(args)
 
-
-    trainer.train()
+    if args.device == 'tpu':
+        xmp.spawn(trainer.train(), nprocs=8, start_method='fork')
+    else:
+        trainer.train()
