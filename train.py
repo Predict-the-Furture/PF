@@ -52,7 +52,7 @@ class Trainer():
         n_samples = len(self.train_loader.sampler)
         for self.epoch in bar_total:
             total_loss = 0
-            for i, data in self.train_loader:
+            for data in self.train_loader:
                 inputs, labels = data
                 inputs, labels = Variable(inputs), Variable(labels)
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
@@ -98,7 +98,7 @@ class Trainer():
         self.model.eval()
         with torch.no_grad():
             total_loss = 0.
-            for i, data in self.evaluate_loader:
+            for data in self.evaluate_loader:
                 inputs, labels = data
                 inputs, labels = Variable(inputs), Variable(labels)
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
