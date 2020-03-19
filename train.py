@@ -4,6 +4,7 @@ import argparse
 import torch
 
 from datetime import datetime
+from tqdm import trange
 from torch.autograd import Variable
 from torch import nn
 from torch.utils.data import DataLoader
@@ -37,18 +38,20 @@ class Trainer():
         self.summary = SummaryWriter('runs/' + datetime.today().strftime("%Y-%m-%d-%H%M%S"))
 
         self.dataset = DiabetesDataset()
-        self.train_loader = DataLoader(dataset=self.dataset, batch_size=64, shuffle=True, num_workers=0)
-        self.evaluate_loader = DataLoader(dataset=self.dataset, batch_size=64, shuffle=True, num_workers=0)
+        self.train_loader = DataLoader(dataset=self.dataset, batch_size=1024, shuffle=True, num_workers=0)
+        self.evaluate_loader = DataLoader(dataset=self.dataset, batch_size=1024, shuffle=True, num_workers=0)
 
         self.model = Model(6, 60, 4, self.device)
         self.model = self.model.to(self.device)
 
         self.criterion =nn.MSELoss(reduction='sum')
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0001)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
 
     def train(self):
-        start = time.time()
-        for self.epoch in range(1000):
+        bar_total = trange(1001, desc='Training')
+        n_samples = len(self.train_loader.sampler)
+        for self.epoch in bar_total:
+            total_loss = 0
             for i, data in enumerate(self.train_loader):
                 inputs, labels = data
                 inputs, labels = Variable(inputs), Variable(labels)
@@ -66,14 +69,14 @@ class Trainer():
                     xm.optimizer_step(self.optimizer)
                     xm.mark_step()
 
-            if (self.epoch + 1) % 50 == 0:
-                accuracy = self.evaluate()
-                self.summary.add_scalar('loss', accuracy, self.epoch + 1)
-                print("{} epoch, accuracy: {} in {}s".format(self.epoch + 1, accuracy, time.time() - start))
-                start = time.time()
-                self.summary.close()
+                batch_size = inputs.shape[0]
+                total_loss += loss.item() * batch_size
 
-            if (self.epoch + 1) % 100 == 0:
+            bar_total.set_description("Loss: {}".format(total_loss / n_samples))
+            bar_total.refresh()
+
+
+            if (self.epoch) % 100 == 0:
                 self.save_checkpoint()
 
 
@@ -84,7 +87,7 @@ class Trainer():
             'optimizer': self.optimizer.state_dict()
         }
 
-        filename = str(self.checkpoint_dir + '/checkpoint-epoch{}.pth'.format(self.epoch + 1))
+        filename = str(self.checkpoint_dir + '/checkpoint-epoch{}.pth'.format(self.epoch))
         torch.save(state, filename)
         self.model.to(self.device)
         print("Saving checkpoint: {} ...".format(filename))
