@@ -38,21 +38,21 @@ class Trainer():
         self.summary = SummaryWriter('runs/' + datetime.today().strftime("%Y-%m-%d-%H%M%S"))
 
         self.dataset = DiabetesDataset()
-        self.train_loader = DataLoader(dataset=self.dataset, batch_size=64, shuffle=True, num_workers=0)
-        self.evaluate_loader = DataLoader(dataset=self.dataset, batch_size=1024, shuffle=True, num_workers=0)
+        self.train_loader = DataLoader(dataset=self.dataset, batch_size=512, shuffle=True, num_workers=0)
+        self.evaluate_loader = DataLoader(dataset=self.dataset, batch_size=512, shuffle=False, num_workers=0)
 
         self.model = Model(6, 60, 4, self.device)
         self.model = self.model.to(self.device)
 
         self.criterion =nn.MSELoss(reduction='sum')
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0001)
 
     def train(self):
         bar_total = trange(1001, desc='Training')
         n_samples = len(self.train_loader.sampler)
         for self.epoch in bar_total:
             total_loss = 0
-            for i, data in enumerate(self.train_loader):
+            for i, data in self.train_loader:
                 inputs, labels = data
                 inputs, labels = Variable(inputs), Variable(labels)
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
@@ -60,7 +60,6 @@ class Trainer():
                 y_pred = self.model(inputs)
 
                 loss = self.criterion(y_pred, labels)
-                print(loss)
                 self.optimizer.zero_grad()
                 loss.backward()
                 if self.tpu == False:
@@ -75,12 +74,12 @@ class Trainer():
             bar_total.set_description("Loss: {}".format(total_loss / n_samples))
             bar_total.refresh()
 
-            if (self.epoch) % 50 == 0:
+            if self.epoch % 10 == 0:
                 accuracy = self.evaluate()
                 self.summary.add_scalar('loss', accuracy, self.epoch)
                 self.summary.close()
 
-            if (self.epoch) % 100 == 0:
+            if self.epoch % 100 == 0:
                 self.save_checkpoint()
 
     def save_checkpoint(self):
@@ -99,7 +98,7 @@ class Trainer():
         self.model.eval()
         with torch.no_grad():
             total_loss = 0.
-            for i, data in enumerate(self.evaluate_loader):
+            for i, data in self.evaluate_loader:
                 inputs, labels = data
                 inputs, labels = Variable(inputs), Variable(labels)
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
