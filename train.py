@@ -74,11 +74,6 @@ class Trainer():
             bar_total.set_description("Loss: {}".format(total_loss / n_samples))
             bar_total.refresh()
 
-            if self.epoch % 10 == 0:
-                accuracy = self.evaluate()
-                self.summary.add_scalar('loss', accuracy, self.epoch)
-                self.summary.close()
-
             if self.epoch % 100 == 0:
                 self.save_checkpoint()
 
