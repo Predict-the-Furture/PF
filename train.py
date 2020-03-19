@@ -28,7 +28,7 @@ class Trainer():
         elif args.device == 'gpu':
             self.device = 'cuda:0'
         elif args.device == 'tpu':
-            self.device = xm.xla_device()
+            self.device = xm.get_xla_supported_devices()
             self.tpu = True
         else:
             exit(0)
@@ -59,14 +59,13 @@ class Trainer():
 
                 y_pred = self.model(inputs)
                 loss = self.criterion(y_pred, labels)
-                loss.backward()
                 self.optimizer.zero_grad()
-                if self.tpu == False:
-                    self.optimizer.step()
-                else:
+                loss.backward()
+                if self.tpu:
                     xm.optimizer_step(self.optimizer, barrier=True)
+                else:
+                    self.optimizer.step()
 
-                batch_size = inputs.shape[0]
                 total_loss += loss.item()
 
             bar_total.set_description("Loss: {}".format(total_loss / len(self.train_loader)))
