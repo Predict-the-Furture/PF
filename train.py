@@ -78,8 +78,6 @@ class Trainer():
             if (self.epoch) % 50 == 0:
                 accuracy = self.evaluate()
                 self.summary.add_scalar('loss', accuracy, self.epoch)
-                print("{} epoch, accuracy: {} in {}s".format(self.epoch, accuracy, time.time() - start))
-                start = time.time()
                 self.summary.close()
 
             if (self.epoch) % 100 == 0:
