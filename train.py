@@ -59,13 +59,12 @@ class Trainer():
 
                 y_pred = self.model(inputs)
                 loss = self.criterion(y_pred, labels)
-                self.optimizer.zero_grad()
                 loss.backward()
+                self.optimizer.zero_grad()
                 if self.tpu == False:
                     self.optimizer.step()
                 else:
-                    xm.optimizer_step(self.optimizer)
-                    xm.mark_step()
+                    xm.optimizer_step(self.optimizer, barrier=True)
 
                 batch_size = inputs.shape[0]
                 total_loss += loss.item()
@@ -82,7 +81,6 @@ class Trainer():
                 self.save_checkpoint()
 
     def save_checkpoint(self):
-        self.model.to('cpu')
         state = {
             'epoch': self.epoch,
             'state_dict': self.model.state_dict(),
@@ -94,7 +92,6 @@ class Trainer():
             xm.save(state, filename)
         else:
             torch.save(state, filename)
-        self.model.to(self.device)
         print("Saving checkpoint: {} ...".format(filename))
 
     def evaluate(self):
