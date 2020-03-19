@@ -48,7 +48,8 @@ class Trainer():
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0001)
 
     def train(self):
-        bar_total = tqdm_notebook(list(range(1001)), desc='Training')
+        epoch = list(range(1001))
+        bar_total = tqdm_notebook(epoch, desc='Training')
         n_samples = len(self.train_loader.sampler)
         for self.epoch in bar_total:
             total_loss = 0
