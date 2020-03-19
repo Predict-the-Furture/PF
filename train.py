@@ -91,7 +91,10 @@ class Trainer():
         }
 
         filename = str(self.checkpoint_dir + '/checkpoint-epoch{}.pth'.format(self.epoch))
-        torch.save(state, filename)
+        if self.tpu:
+            xm.save(state, filename)
+        else:
+            torch.save(state, filename)
         self.model.to(self.device)
         print("Saving checkpoint: {} ...".format(filename))
 
