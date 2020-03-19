@@ -49,7 +49,6 @@ class Trainer():
     def train(self):
         start = time.time()
         for self.epoch in range(1000):
-            print(self.epoch)
             if self.tpu == True:
                 self.train_loader = pl.ParallelLoader(self.train_loader, [self.device]).per_device_loader(self.device)
 
