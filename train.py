@@ -95,9 +95,11 @@ class Trainer():
         self.model.eval()
         with torch.no_grad():
             if self.tpu == True:
-                self.evaluate_loader = pl.ParallelLoader(self.train_loader, [self.device]).per_device_loader(self.device)
+                self._evaluate_loader = pl.ParallelLoader(self.evaluate_loader, [self.device]).per_device_loader(self.device)
+            else:
+                self._evaluate_loader = self.evaluate_loader
             total_loss = 0.
-            for i, data in enumerate(self.evaluate_loader):
+            for i, data in enumerate(self._evaluate_loader):
                 inputs, labels = data
                 inputs, labels = Variable(inputs), Variable(labels)
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
