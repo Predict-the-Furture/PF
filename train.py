@@ -45,7 +45,7 @@ class Trainer():
         self.model = self.model.to(self.device)
 
         self.criterion =nn.MSELoss(reduction='sum')
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0001)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
 
     def train(self):
         bar_total = trange(1001, desc='Training')
@@ -60,7 +60,6 @@ class Trainer():
                 y_pred = self.model(inputs)
 
                 loss = self.criterion(y_pred, labels)
-                print(loss)
                 self.optimizer.zero_grad()
                 loss.backward()
                 if self.tpu == False:
