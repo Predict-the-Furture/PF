@@ -38,7 +38,7 @@ class Trainer():
         self.summary = SummaryWriter('runs/' + datetime.today().strftime("%Y-%m-%d-%H%M%S"))
 
         self.dataset = DiabetesDataset()
-        self.train_loader = DataLoader(dataset=self.dataset, batch_size=1024, shuffle=True, num_workers=0)
+        self.train_loader = DataLoader(dataset=self.dataset, batch_size=64, shuffle=True, num_workers=0)
         self.evaluate_loader = DataLoader(dataset=self.dataset, batch_size=1024, shuffle=True, num_workers=0)
 
         self.model = Model(6, 60, 4, self.device)
@@ -75,10 +75,15 @@ class Trainer():
             bar_total.set_description("Loss: {}".format(total_loss / n_samples))
             bar_total.refresh()
 
+            if (self.epoch) % 50 == 0:
+                accuracy = self.evaluate()
+                self.summary.add_scalar('loss', accuracy, self.epoch)
+                print("{} epoch, accuracy: {} in {}s".format(self.epoch, accuracy, time.time() - start))
+                start = time.time()
+                self.summary.close()
 
             if (self.epoch) % 100 == 0:
                 self.save_checkpoint()
-
 
     def save_checkpoint(self):
         state = {
