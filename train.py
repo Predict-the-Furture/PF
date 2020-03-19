@@ -41,14 +41,14 @@ class Trainer():
         self.train_loader = DataLoader(dataset=self.dataset, batch_size=64, shuffle=True, num_workers=0)
         self.evaluate_loader = DataLoader(dataset=self.dataset, batch_size=256, shuffle=False, num_workers=0)
 
-        self.model = Model(6, 60, 2, self.device)
+        self.model = Model(6, 40, 3, self.device)
         self.model = self.model.to(self.device)
 
         self.criterion =nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
 
     def train(self):
-        bar_total = trange(1001, desc='Training')
+        bar_total = trange(1001, desc='Training', leave=False)
         n_samples = len(self.train_loader.sampler)
         for self.epoch in bar_total:
             total_loss = 0
@@ -59,7 +59,6 @@ class Trainer():
 
                 y_pred = self.model(inputs)
                 loss = self.criterion(y_pred, labels)
-                print(loss)
                 self.optimizer.zero_grad()
                 loss.backward()
                 if self.tpu == False:
