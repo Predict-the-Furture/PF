@@ -4,7 +4,6 @@ import argparse
 import torch
 
 from datetime import datetime
-from tqdm import trange
 from torch.autograd import Variable
 from torch import nn
 from torch.utils.data import DataLoader
@@ -45,13 +44,14 @@ class Trainer():
         self.model = self.model.to(self.device)
 
         self.criterion =nn.MSELoss(reduction='sum')
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0001)
 
     def train(self):
-        bar_total = trange(1001, desc='Training')
-        n_samples = len(self.train_loader.sampler)
-        for self.epoch in bar_total:
-            total_loss = 0
+        start = time.time()
+        for self.epoch in range(1000):
+            if self.tpu == True:
+                self.train_loader = pl.ParallelLoader(self.train_loader, [self.device]).per_device_loader(self.device)
+
             for i, data in enumerate(self.train_loader):
                 inputs, labels = data
                 inputs, labels = Variable(inputs), Variable(labels)
@@ -60,6 +60,7 @@ class Trainer():
                 y_pred = self.model(inputs)
 
                 loss = self.criterion(y_pred, labels)
+                print(loss)
                 self.optimizer.zero_grad()
                 loss.backward()
                 if self.tpu == False:
@@ -68,18 +69,14 @@ class Trainer():
                     xm.optimizer_step(self.optimizer)
                     xm.mark_step()
 
-                batch_size = inputs.shape[0]
-                total_loss += loss.item() * batch_size
-
-            bar_total.set_description("Loss: {}".format(total_loss / n_samples))
-            bar_total.refresh()
-
-            if (self.epoch) % 50 == 0:
-                loss = self.evaluate()
-                self.summary.add_scalar('loss', loss, self.epoch)
+            if (self.epoch + 1) % 50 == 0:
+                accuracy = self.evaluate()
+                self.summary.add_scalar('loss', accuracy, self.epoch + 1)
+                print("{} epoch, accuracy: {} in {}s".format(self.epoch + 1, accuracy, time.time() - start))
+                start = time.time()
                 self.summary.close()
 
-            if (self.epoch) % 100 == 0:
+            if (self.epoch + 1) % 100 == 0:
                 self.save_checkpoint()
 
 
@@ -90,16 +87,19 @@ class Trainer():
             'optimizer': self.optimizer.state_dict()
         }
 
-        filename = str(self.checkpoint_dir + '/checkpoint-epoch{}.pth'.format(self.epoch))
+        filename = str(self.checkpoint_dir + '/checkpoint-epoch{}.pth'.format(self.epoch + 1))
         torch.save(state, filename)
-        self.model.to(self.device)
         print("Saving checkpoint: {} ...".format(filename))
 
     def evaluate(self):
         self.model.eval()
         with torch.no_grad():
+            if self.tpu == True:
+                self._evaluate_loader = pl.ParallelLoader(self.evaluate_loader, [self.device]).per_device_loader(self.device)
+            else:
+                self._evaluate_loader = self.evaluate_loader
             total_loss = 0.
-            for i, data in enumerate(self.evaluate_loader):
+            for i, data in enumerate(self._evaluate_loader):
                 inputs, labels = data
                 inputs, labels = Variable(inputs), Variable(labels)
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
