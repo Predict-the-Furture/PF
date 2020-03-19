@@ -89,6 +89,7 @@ class Trainer():
 
         filename = str(self.checkpoint_dir + '/checkpoint-epoch{}.pth'.format(self.epoch + 1))
         torch.save(state, filename)
+        self.model.to(self.device)
         print("Saving checkpoint: {} ...".format(filename))
 
     def evaluate(self):
