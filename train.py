@@ -60,6 +60,7 @@ class Trainer():
                 y_pred = self.model(inputs)
 
                 loss = self.criterion(y_pred, labels)
+                print(loss)
                 self.optimizer.zero_grad()
                 loss.backward()
                 if self.tpu == False:
@@ -94,7 +95,7 @@ class Trainer():
         self.model.eval()
         with torch.no_grad():
             if self.tpu == True:
-                self.train_loader = pl.ParallelLoader(self.train_loader, [self.device]).per_device_loader(self.device)
+                self.evaluate_loader = pl.ParallelLoader(self.train_loader, [self.device]).per_device_loader(self.device)
             total_loss = 0.
             for i, data in enumerate(self.evaluate_loader):
                 inputs, labels = data
