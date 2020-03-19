@@ -4,6 +4,7 @@ import argparse
 import torch
 
 from datetime import datetime
+from tqdm import tqdm_notebook
 from torch.autograd import Variable
 from torch import nn
 from torch.utils.data import DataLoader
@@ -47,8 +48,10 @@ class Trainer():
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0001)
 
     def train(self):
-        start = time.time()
-        for self.epoch in range(1001):
+        bar_total = tqdm_notebook(range(1001), desc='Training')
+        n_samples = len(self.train_loader.sampler)
+        for self.epoch in bar_total:
+            total_loss = 0
             for i, data in enumerate(self.train_loader):
                 inputs, labels = data
                 inputs, labels = Variable(inputs), Variable(labels)
@@ -65,11 +68,14 @@ class Trainer():
                     xm.optimizer_step(self.optimizer)
                     xm.mark_step()
 
+                batch_size = inputs.shape[0]
+                total_loss += loss.item() * batch_size
+
+            bar_total.set_description("Loss: {}".format(total_loss / n_samples))
+
             if (self.epoch) % 50 == 0:
-                accuracy = self.evaluate()
-                self.summary.add_scalar('loss', accuracy, self.epoch)
-                print("{} epoch, accuracy: {} in {}s".format(self.epoch, accuracy, time.time() - start))
-                start = time.time()
+                loss = self.evaluate()
+                self.summary.add_scalar('loss', loss, self.epoch)
                 self.summary.close()
 
             if (self.epoch) % 100 == 0:
