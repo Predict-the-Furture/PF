@@ -23,7 +23,7 @@ data_loader = DataLoader(dataset=dataset, batch_size=64, shuffle=False, num_work
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-checkpoint = torch.load('saved/checkpoint-epoch200.pth', map_location='cpu')
+checkpoint = torch.load('saved/checkpoint-epoch100.pth')
 state_dict = checkpoint['state_dict']
 
 model = Model(6, 60, 4, device)
