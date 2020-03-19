@@ -4,7 +4,7 @@ import argparse
 import torch
 
 from datetime import datetime
-from tqdm import tqdm_notebook
+from tqdm import trange
 from torch.autograd import Variable
 from torch import nn
 from torch.utils.data import DataLoader
@@ -48,8 +48,7 @@ class Trainer():
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0001)
 
     def train(self):
-        epoch = list(range(1001))
-        bar_total = tqdm_notebook(epoch, desc='Training')
+        bar_total = trange(1001, desc='Training')
         n_samples = len(self.train_loader.sampler)
         for self.epoch in bar_total:
             total_loss = 0
@@ -73,6 +72,7 @@ class Trainer():
                 total_loss += loss.item() * batch_size
 
             bar_total.set_description("Loss: {}".format(total_loss / n_samples))
+            bar_total.refresh()
 
             if (self.epoch) % 50 == 0:
                 loss = self.evaluate()
