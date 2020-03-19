@@ -38,8 +38,8 @@ class Trainer():
         self.summary = SummaryWriter('runs/' + datetime.today().strftime("%Y-%m-%d-%H%M%S"))
 
         self.dataset = DiabetesDataset()
-        self.train_loader = DataLoader(dataset=self.dataset, batch_size=512, shuffle=True, num_workers=0)
-        self.evaluate_loader = DataLoader(dataset=self.dataset, batch_size=512, shuffle=False, num_workers=0)
+        self.train_loader = DataLoader(dataset=self.dataset, batch_size=256, shuffle=True, num_workers=0)
+        self.evaluate_loader = DataLoader(dataset=self.dataset, batch_size=256, shuffle=False, num_workers=0)
 
         self.model = Model(6, 60, 4, self.device)
         self.model = self.model.to(self.device)
