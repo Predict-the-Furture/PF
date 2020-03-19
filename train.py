@@ -38,7 +38,7 @@ class Trainer():
         self.summary = SummaryWriter('runs/' + datetime.today().strftime("%Y-%m-%d-%H%M%S"))
 
         self.dataset = DiabetesDataset()
-        self.train_loader = DataLoader(dataset=self.dataset, batch_size=256, shuffle=True, num_workers=0)
+        self.train_loader = DataLoader(dataset=self.dataset, batch_size=16, shuffle=True, num_workers=0)
         self.evaluate_loader = DataLoader(dataset=self.dataset, batch_size=256, shuffle=False, num_workers=0)
 
         self.model = Model(6, 60, 4, self.device)
@@ -69,9 +69,9 @@ class Trainer():
                     xm.mark_step()
 
                 batch_size = inputs.shape[0]
-                total_loss += loss.item() * batch_size
+                total_loss += loss.item()
 
-            bar_total.set_description("Loss: {}".format(total_loss / n_samples))
+            bar_total.set_description("Loss: {}".format(total_loss / len(self.train_loader)))
             bar_total.refresh()
 
             if self.epoch % 10 == 0:
