@@ -69,13 +69,10 @@ class Trainer():
                     xm.optimizer_step(self.optimizer)
                     xm.mark_step()
 
-            print("time: ", time.time() - start)
-
             if (self.epoch + 1) % 50 == 0:
-                print('a')
                 accuracy = self.evaluate()
-                self.summary.add_scalar('loss', accuracy, self.epoch)
-                print("{} epoch in {}s".format(self.epoch, time.time() - start))
+                self.summary.add_scalar('loss', accuracy, self.epoch + 1)
+                print("{} epoch in {}s".format(self.epoch + 1, time.time() - start))
                 start = time.time()
                 self.summary.close()
 
@@ -90,7 +87,7 @@ class Trainer():
             'optimizer': self.optimizer.state_dict()
         }
 
-        filename = str(self.checkpoint_dir + '/checkpoint-epoch{}.pth'.format(self.epoch))
+        filename = str(self.checkpoint_dir + '/checkpoint-epoch{}.pth'.format(self.epoch + 1))
         torch.save(state, filename)
         print("Saving checkpoint: {} ...".format(filename))
 
