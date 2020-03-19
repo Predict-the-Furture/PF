@@ -38,14 +38,14 @@ class Trainer():
         self.summary = SummaryWriter('runs/' + datetime.today().strftime("%Y-%m-%d-%H%M%S"))
 
         self.dataset = DiabetesDataset()
-        self.train_loader = DataLoader(dataset=self.dataset, batch_size=64, shuffle=True, num_workers=0)
-        self.evaluate_loader = DataLoader(dataset=self.dataset, batch_size=64, shuffle=False, num_workers=0)
+        self.train_loader = DataLoader(dataset=self.dataset, batch_size=512, shuffle=True, num_workers=0)
+        self.evaluate_loader = DataLoader(dataset=self.dataset, batch_size=512, shuffle=False, num_workers=0)
 
         self.model = Model(6, 60, 4, self.device)
         self.model = self.model.to(self.device)
 
         self.criterion =nn.MSELoss(reduction='sum')
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0005)
 
     def train(self):
         bar_total = trange(1001, desc='Training')
@@ -60,7 +60,6 @@ class Trainer():
                 y_pred = self.model(inputs)
 
                 loss = self.criterion(y_pred, labels)
-                print(loss)
                 self.optimizer.zero_grad()
                 loss.backward()
                 if self.tpu == False:
@@ -74,6 +73,11 @@ class Trainer():
 
             bar_total.set_description("Loss: {}".format(total_loss / n_samples))
             bar_total.refresh()
+
+            if self.epoch % 10 == 0:
+                accuracy = self.evaluate()
+                self.summary.add_scalar('loss', accuracy, self.epoch)
+                self.summary.close()
 
             if self.epoch % 100 == 0:
                 self.save_checkpoint()
