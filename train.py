@@ -28,7 +28,7 @@ class Trainer():
         elif args.device == 'gpu':
             self.device = 'cuda:0'
         elif args.device == 'tpu':
-            self.device = xm.get_xla_supported_devices()
+            self.device = xm.xla_device()
             self.tpu = True
         else:
             exit(0)
@@ -119,4 +119,5 @@ if __name__ == '__main__':
     args = args.parse_args()
     trainer = Trainer(args)
 
-    trainer.train()
+    #trainer.train()
+    xmp.spawn(trainer.train(), args=())
