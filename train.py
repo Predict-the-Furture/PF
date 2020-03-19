@@ -48,7 +48,7 @@ class Trainer():
 
     def train(self):
         start = time.time()
-        for self.epoch in range(1000):
+        for self.epoch in range(1001):
             for i, data in enumerate(self.train_loader):
                 inputs, labels = data
                 inputs, labels = Variable(inputs), Variable(labels)
@@ -65,14 +65,14 @@ class Trainer():
                     xm.optimizer_step(self.optimizer)
                     xm.mark_step()
 
-            if (self.epoch + 1) % 50 == 0:
+            if (self.epoch) % 50 == 0:
                 accuracy = self.evaluate()
-                self.summary.add_scalar('loss', accuracy, self.epoch + 1)
-                print("{} epoch, accuracy: {} in {}s".format(self.epoch + 1, accuracy, time.time() - start))
+                self.summary.add_scalar('loss', accuracy, self.epoch)
+                print("{} epoch, accuracy: {} in {}s".format(self.epoch, accuracy, time.time() - start))
                 start = time.time()
                 self.summary.close()
 
-            if (self.epoch + 1) % 100 == 0:
+            if (self.epoch) % 100 == 0:
                 self.save_checkpoint()
 
 
@@ -83,7 +83,7 @@ class Trainer():
             'optimizer': self.optimizer.state_dict()
         }
 
-        filename = str(self.checkpoint_dir + '/checkpoint-epoch{}.pth'.format(self.epoch + 1))
+        filename = str(self.checkpoint_dir + '/checkpoint-epoch{}.pth'.format(self.epoch))
         torch.save(state, filename)
         self.model.to(self.device)
         print("Saving checkpoint: {} ...".format(filename))
