@@ -38,17 +38,17 @@ class Trainer():
         self.summary = SummaryWriter('runs/' + datetime.today().strftime("%Y-%m-%d-%H%M%S"))
 
         self.dataset = DiabetesDataset()
-        self.train_loader = DataLoader(dataset=self.dataset, batch_size=64, shuffle=True, num_workers=0)
-        self.evaluate_loader = DataLoader(dataset=self.dataset, batch_size=256, shuffle=False, num_workers=0)
+        self.train_loader = DataLoader(dataset=self.dataset, batch_size=512, shuffle=True, num_workers=0)
+        self.evaluate_loader = DataLoader(dataset=self.dataset, batch_size=512, shuffle=False, num_workers=0)
 
-        self.model = Model(6, 40, 3, self.device)
+        self.model = Model(6, 256, 4, self.device)
         self.model = self.model.to(self.device)
 
         self.criterion =nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
 
     def train(self):
-        bar_total = trange(1001, desc='Training', leave=True)
+        bar_total = trange(1001, desc='Training', leave=False)
         n_samples = len(self.train_loader.sampler)
         for self.epoch in bar_total:
             total_loss = 0
