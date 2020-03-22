@@ -39,7 +39,7 @@ class DiabetesDataset(Dataset):
 
         self.data = []
         for item in tqdm(self.db_tables, desc='Retrieve all stock data'):
-            self.cursor.execute("SELECT * FROM _" + item + " ORDER BY date ASC")
+            self.cursor.execute("SELECT * FROM _" + item + " WHERE date < '2015-00-01' ORDER BY date ASC")
             self.maria.commit()
             self.data += list([open, high, low, close, volume, amount] for (_, open, high, low, close, volume, amount) in self.cursor.fetchall())
 

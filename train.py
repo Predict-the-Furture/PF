@@ -4,7 +4,7 @@ import argparse
 import torch
 
 from datetime import datetime
-from tqdm import trange
+from tqdm import tqdm
 from torch.autograd import Variable
 from torch import nn
 from torch.utils.data import DataLoader
@@ -20,6 +20,7 @@ if tpu_check is not None:
     import torch_xla.distributed.parallel_loader as pl
     import torch_xla.distributed.xla_multiprocessing as xmp
 
+
 class Trainer():
     def __init__(self, args):
         self.tpu = False
@@ -34,6 +35,8 @@ class Trainer():
             exit(0)
 
         self.checkpoint_dir = 'saved'
+        self.start_epoch = 0
+        self.end_epoch = args.end_epoch
 
         self.summary = SummaryWriter('runs/' + datetime.today().strftime("%Y-%m-%d-%H%M%S"))
 
@@ -44,11 +47,14 @@ class Trainer():
         self.model = Model(6, 256, 4, self.device)
         self.model = self.model.to(self.device)
 
-        self.criterion =nn.MSELoss()
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
+        if args.resume is not None:
+            self.load_checkpoint()
+
+        self.criterion = nn.MSELoss()
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0005)
 
     def train(self):
-        bar_total = trange(1001, desc='Training', leave=False)
+        bar_total = tqdm(range(self.start_epoch, self.end_epoch), desc='Training', leave=False)
         n_samples = len(self.train_loader.sampler)
         for self.epoch in bar_total:
             total_loss = 0
@@ -78,6 +84,14 @@ class Trainer():
 
             if self.epoch % 100 == 0:
                 self.save_checkpoint()
+
+    def load_checkpoint(self):
+        checkpoint = torch.load(args.resume)
+        self.start_epoch = checkpoint['epoch']
+        state_dict = checkpoint['state_dict']
+
+        self.model.load_state_dict(state_dict)
+        print("Loading checkpoint: {} ...".format(args.resume))
 
     def save_checkpoint(self):
         state = {
@@ -112,12 +126,17 @@ class Trainer():
         self.model.train()
         return total_loss / n_samples
 
+
 if __name__ == '__main__':
     args = argparse.ArgumentParser(description='Trainer')
     args.add_argument('-d', '--device', default='cpu', type=str)
+    args.add_argument('-r', '--resume', default=None, type=str)
+    args.add_argument('-e', '--end_epoch', default=1000, type=int)
 
     args = args.parse_args()
     trainer = Trainer(args)
 
-    #trainer.train()
-    xmp.spawn(trainer.train(), args=())
+    if args.device == 'tpu':
+        xmp.spawn(trainer.train(), args=())
+    else:
+        trainer.train()

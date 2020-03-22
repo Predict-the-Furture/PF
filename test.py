@@ -19,11 +19,11 @@ matplotlib.use('TkAgg')
 
 
 dataset = DiabetesDataset()
-data_loader = DataLoader(dataset=dataset, batch_size=64, shuffle=False, num_workers=0)
+data_loader = DataLoader(dataset=dataset, batch_size=64, shuffle=False, num_workers=0, train=False)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-checkpoint = torch.load('saved/checkpoint-epoch100 (2).pth')
+checkpoint = torch.load('saved/checkpoint-epoch1000.pth')
 state_dict = checkpoint['state_dict']
 
 model = Model(6, 256, 4, device)
