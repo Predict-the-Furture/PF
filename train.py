@@ -46,7 +46,7 @@ class Trainer():
 
         folder([self.save_dir, self.save_dir + '/models', self.save_dir + '/runs'])
 
-        self.summary = SummaryWriter(self.save_dir + '/runs/' + datetime.today(timezone).strftime("%Y-%m-%d-%H%M"))
+        self.summary = SummaryWriter(self.save_dir + '/runs/' + datetime    .now(timezone).strftime("%Y-%m-%d-%H%M"))
 
         self.dataset = DiabetesDataset()
         self.train_loader = DataLoader(dataset=self.dataset, batch_size=512, shuffle=True, num_workers=0)
