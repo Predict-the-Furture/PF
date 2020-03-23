@@ -34,11 +34,13 @@ class Trainer():
         else:
             exit(0)
 
-        self.checkpoint_dir = 'saved'
+        self.save_dir = args.save_dir
         self.start_epoch = 0
+        self.summary_write = args.summary_write
+        self.save_model = args.save_model
         self.end_epoch = args.end_epoch
 
-        self.summary = SummaryWriter('runs/' + datetime.today().strftime("%Y-%m-%d-%H%M"))
+        self.summary = SummaryWriter(self.save_dir + '/runs/' + datetime.today().strftime("%Y-%m-%d-%H%M"))
 
         self.dataset = DiabetesDataset()
         self.train_loader = DataLoader(dataset=self.dataset, batch_size=512, shuffle=True, num_workers=0)
@@ -77,12 +79,12 @@ class Trainer():
             bar_total.set_description("Loss: {}".format(total_loss / len(self.train_loader)))
             bar_total.refresh()
 
-            if self.epoch % 10 == 0:
+            if self.epoch % self.summary_write == 0:
                 accuracy = self.evaluate()
                 self.summary.add_scalar('loss', accuracy, self.epoch)
                 self.summary.close()
 
-            if self.epoch % 100 == 0:
+            if self.epoch % self.save_model == 0:
                 self.save_checkpoint()
 
     def load_checkpoint(self):
@@ -100,7 +102,7 @@ class Trainer():
             'optimizer': self.optimizer.state_dict()
         }
 
-        filename = str(self.checkpoint_dir + '/checkpoint-epoch{}.pth'.format(self.epoch))
+        filename = str(self.save_dir + '/models/checkpoint-epoch{}.pth'.format(self.epoch))
         if self.tpu:
             xm.save(state, filename)
         else:
@@ -131,6 +133,9 @@ if __name__ == '__main__':
     args = argparse.ArgumentParser(description='Trainer')
     args.add_argument('-d', '--device', default='cpu', type=str)
     args.add_argument('-r', '--resume', default=None, type=str)
+    args.add_argument('-s', '--save_dir', default='.', type=str)
+    args.add_argument('-w', '--summary_write', default=50, type=int)
+    args.add_argument('-m', '--save_model', default=200, type=int)
     args.add_argument('-e', '--end_epoch', default=1000, type=int)
 
     args = args.parse_args()
