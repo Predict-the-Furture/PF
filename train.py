@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
 
 from utils import folder
-from model import Model
+from model import Model, Test_Model
 from data_loader import DiabetesDataset
 
 tpu_check = importlib.find_loader('torch_xla')
@@ -52,14 +52,14 @@ class Trainer():
         self.train_loader = DataLoader(dataset=self.dataset, batch_size=512, shuffle=True, num_workers=0)
         self.evaluate_loader = DataLoader(dataset=self.dataset, batch_size=512, shuffle=False, num_workers=0)
 
-        self.model = Model(6, 256, 4, self.device)
+        self.model = Test_Model(6, 1024, 4, self.device)
         self.model = self.model.to(self.device)
 
         if args.resume is not None:
             self.load_checkpoint()
 
         self.criterion = nn.MSELoss()
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0005)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0001)
 
     def train(self):
         bar_total = tqdm(range(self.start_epoch, self.end_epoch), desc='Training', leave=False)
