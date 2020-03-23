@@ -38,7 +38,7 @@ class Trainer():
         self.start_epoch = 0
         self.end_epoch = args.end_epoch
 
-        self.summary = SummaryWriter('runs/' + datetime.today().strftime("%Y-%m-%d-%H%M%S"))
+        self.summary = SummaryWriter('runs/' + datetime.today().strftime("%Y-%m-%d-%H%M"))
 
         self.dataset = DiabetesDataset()
         self.train_loader = DataLoader(dataset=self.dataset, batch_size=512, shuffle=True, num_workers=0)
