@@ -37,6 +37,8 @@ class Trainer():
             self.tpu = True
         else:
             exit(0)
+        
+        torch.manual_seed(777)
 
         self.save_dir = args.save_dir
         self.start_epoch = 0
