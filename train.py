@@ -1,3 +1,4 @@
+import os
 import time
 import importlib
 import argparse
@@ -10,6 +11,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
 
+from utils import folder
 from model import Model
 from data_loader import DiabetesDataset
 
@@ -39,6 +41,8 @@ class Trainer():
         self.summary_write = args.summary_write
         self.save_model = args.save_model
         self.end_epoch = args.end_epoch
+        
+        folder([self.save_dir, self.save_dir + '/models', self.save_dir + '/runs'])
 
         self.summary = SummaryWriter(self.save_dir + '/runs/' + datetime.today().strftime("%Y-%m-%d-%H%M"))
 
