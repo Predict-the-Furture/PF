@@ -16,7 +16,7 @@ class Test_Model(nn.Module):
         self.lstm_LtoR = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
         self.lstm_RtoL = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
 
-        self.linear = nn.Linear(self.hidden_size, self.input_size)
+        self.linear = nn.Linear(self.hidden_size * 2, self.input_size)
 
     def init_hidden(self, x):
         return (torch.zeros(4, x.size(0), self.hidden_size).to(self.device),
@@ -30,7 +30,6 @@ class Test_Model(nn.Module):
         lstm_out_RtoL, self.hidden_RtoL = self.lstm_RtoL(reversed_embeds, self.hidden_RtoL)
 
         output = torch.cat((lstm_out_LtoR, lstm_out_RtoL), 2)
-
         output = F.softmax(self.linear(output), 1)
         output = output[:, -1, :]
         return output
@@ -57,7 +56,7 @@ class Model(nn.Module):
     def forward(self, x):
         hidden, cell = self.init_hidden(x)
         output, (hidden, cell) = self.lstm(x, (hidden, cell))
-
+        print(output.size())
         output = F.softmax(self.linear(output), 1)
         output = output[:, -1, :]
         return output
