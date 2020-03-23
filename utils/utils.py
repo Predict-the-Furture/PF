@@ -1,6 +1,6 @@
 import os
 
-__all__ = ['folder']
+__all__ = ['vstack', 'folder']
 
 def vstack(arr_2):
     output = []

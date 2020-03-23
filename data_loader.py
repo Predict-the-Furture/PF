@@ -33,13 +33,13 @@ class DiabetesDataset(Dataset):
         self.db_tables = ['000020']
         self.len = 0
         for item in tqdm(self.db_tables, desc='Count num'):
-            self.cursor.execute("SELECT COUNT(*) FROM _" + item + " WHERE date < 20150101")
+            self.cursor.execute("SELECT COUNT(*) FROM _" + item + " WHERE date > 20200201")
             self.maria.commit()
             self.len += self.cursor.fetchone()[0] - 31
 
         self.data = []
         for item in tqdm(self.db_tables, desc='Retrieve all stock data'):
-            self.cursor.execute("SELECT * FROM _" + item + " WHERE date < 20150101 ORDER BY date ASC")
+            self.cursor.execute("SELECT * FROM _" + item + " WHERE date > 20200201 ORDER BY date ASC")
             self.maria.commit()
             self.data += list([open, high, low, close, volume, amount] for (_, open, high, low, close, volume, amount) in self.cursor.fetchall())
 

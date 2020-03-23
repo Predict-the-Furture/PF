@@ -19,11 +19,11 @@ matplotlib.use('TkAgg')
 
 
 dataset = DiabetesDataset()
-data_loader = DataLoader(dataset=dataset, batch_size=64, shuffle=False, num_workers=0, train=False)
+data_loader = DataLoader(dataset=dataset, batch_size=64, shuffle=False, num_workers=0)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-checkpoint = torch.load('saved/checkpoint-epoch1000.pth')
+checkpoint = torch.load('saved/checkpoint-epoch8400.pth')
 state_dict = checkpoint['state_dict']
 
 model = Model(6, 256, 4, device)
@@ -77,7 +77,7 @@ axes[0].get_xaxis().set_visible(False)
 
 arange = list([i] for i in range(real_data.shape[0]))
 candlestick_ohlc(axes[0], np.hstack([arange, real_data[:, :4]]), colorup='r', colordown='b')
-candlestick_ohlc(axes[0], np.hstack([arange, predicted[:, :4]]), colorup='y', colordown='m')
+candlestick_ohlc(axes[0], np.hstack([arange, predicted[:, :4]]), colorup='y', colordown='c')
 
 axes[1].bar(np.arange(real_data.shape[0]), real_data[:, 4], color='k', align='center')
 plt.tight_layout()
