@@ -41,7 +41,7 @@ class Trainer():
         self.summary_write = args.summary_write
         self.save_model = args.save_model
         self.end_epoch = args.end_epoch
-        
+
         folder([self.save_dir, self.save_dir + '/models', self.save_dir + '/runs'])
 
         self.summary = SummaryWriter(self.save_dir + '/runs/' + datetime.today().strftime("%Y-%m-%d-%H%M"))
