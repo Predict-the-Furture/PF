@@ -48,13 +48,15 @@ class Trainer():
 
         folder([self.save_dir, self.save_dir + '/models', self.save_dir + '/runs'])
 
-        self.summary = SummaryWriter(self.save_dir + '/runs/' + datetime    .now(timezone).strftime("%Y-%m-%d-%H%M"))
+        self.summary = SummaryWriter(self.save_dir + '/runs/' + datetime.now(timezone).strftime("%Y-%m-%d-%H%M"))
 
-        self.dataset = DiabetesDataset()
-        self.train_loader = DataLoader(dataset=self.dataset, batch_size=512, shuffle=True, num_workers=0)
-        self.evaluate_loader = DataLoader(dataset=self.dataset, batch_size=512, shuffle=False, num_workers=0)
+        self.dataset_train = DiabetesDataset(train=True)
+        self.dataset_test = DiabetesDataset(train=False)
+        self.train_loader = DataLoader(dataset=self.dataset_train, batch_size=128, shuffle=True, num_workers=0)
+        self.evaluate_loader = DataLoader(dataset=self.dataset_test, batch_size=128, shuffle=False, num_workers=0)
 
-        self.model = Test_Model(6, 1024, 4, self.device)
+        self.model = Test_Model(4, 512, self.device)
+
         self.model = self.model.to(self.device)
 
         if args.resume is not None:
@@ -142,8 +144,8 @@ if __name__ == '__main__':
     args.add_argument('-d', '--device', default='cpu', type=str)
     args.add_argument('-r', '--resume', default=None, type=str)
     args.add_argument('-s', '--save_dir', default='.', type=str)
-    args.add_argument('-w', '--summary_write', default=50, type=int)
-    args.add_argument('-m', '--save_model', default=200, type=int)
+    args.add_argument('-w', '--summary_write', default=100, type=int)
+    args.add_argument('-m', '--save_model', default=500, type=int)
     args.add_argument('-e', '--end_epoch', default=1000, type=int)
 
     args = args.parse_args()

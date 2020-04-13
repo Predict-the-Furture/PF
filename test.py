@@ -1,86 +1,22 @@
-import torch
-import matplotlib
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
+import requests
 
+URL = "https://opendart.fss.or.kr/api/list.json"
+KEY = "f90ae56d6e8a413a7cbc5c86a50ee97d2fe4c413"
+res = requests.get(URL)
+print(res.status_code)
 
-from torch.utils.data import DataLoader
-from torch import nn
+parameters = {'crtfc_key': KEY, 'corp_code': '005930'}
+res = requests.get(URL, params=parameters)
+print(res.text)
 
-from tqdm import tqdm
-from model import Model
-from data_loader import DiabetesDataset, load_test_stocks
-from utils import vstack
+import FinanceDataReader as fdr
+df = fdr.DataReader('263750')
+print(df)
 
-from mpl_finance import candlestick_ohlc
+from korea_news_crawler.articlecrawler import ArticleCrawler
 
-matplotlib.use('TkAgg')
-
-
-dataset = DiabetesDataset()
-data_loader = DataLoader(dataset=dataset, batch_size=64, shuffle=False, num_workers=0)
-
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-checkpoint = torch.load('saved/checkpoint-epoch8400.pth')
-state_dict = checkpoint['state_dict']
-
-model = Model(6, 256, 4, device)
-model.load_state_dict(state_dict)
-
-model = model.to(device)
-model.eval()
-
-total_loss = 0.0
-criterion = nn.MSELoss()
-
-batch_real_data = []
-batch_predicted = []
-
-with torch.no_grad():
-    for i, (data, target) in enumerate(tqdm(data_loader)):
-
-        output = model(data)
-
-        loss = criterion(output, target)
-
-        batch_real_data.append(target.numpy())
-        batch_predicted.append(output.numpy())
-
-        batch_size = data.shape[0]
-        total_loss += loss.item() * batch_size
-
-    n_samples = len(data_loader.sampler)
-    loss = total_loss / n_samples
-    print('{} Loss: {}'.format(total_loss, loss))
-
-real_data = vstack(batch_real_data)
-predicted = vstack(batch_predicted)
-
-real_data = dataset.min_max_scaler.inverse_transform(real_data)
-predicted = dataset.min_max_scaler.inverse_transform(predicted)
-
-
-print(np.shape(real_data), np.shape(predicted))
-
-#real_data = list(i[0] for i in real_data)
-#predicted = list(i[0] for i in predicted)
-
-fig = plt.figure(figsize=(8, 5))
-fig.set_facecolor('w')
-gs = gridspec.GridSpec(2, 1, height_ratios=[3, 1])
-axes = []
-axes.append(plt.subplot(gs[0]))
-axes.append(plt.subplot(gs[1], sharex=axes[0]))
-axes[0].get_xaxis().set_visible(False)
-
-arange = list([i] for i in range(real_data.shape[0]))
-candlestick_ohlc(axes[0], np.hstack([arange, real_data[:, :4]]), colorup='r', colordown='b', alpha=.5)
-candlestick_ohlc(axes[0], np.hstack([arange, predicted[:, :4]]), colorup='forestgreen', colordown='black', alpha=.5)
-
-axes[1].bar(np.arange(real_data.shape[0]), real_data[:, 4], color='r', align='center', alpha=.5)
-axes[1].bar(np.arange(predicted.shape[0]), predicted[:, 4], color='g', align='center', alpha=.5)
-plt.tight_layout()
-plt.legend()
-plt.show()
+if __name__ == '__main__':
+    Crawler = ArticleCrawler()
+    Crawler.set_category("정치")
+    Crawler.set_date_range(2017, 1, 2018, 1)
+    Crawler.start()
