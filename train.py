@@ -55,7 +55,7 @@ class Trainer():
         self.train_loader = DataLoader(dataset=self.dataset_train, batch_size=128, shuffle=True, num_workers=0)
         self.evaluate_loader = DataLoader(dataset=self.dataset_test, batch_size=128, shuffle=False, num_workers=0)
 
-        self.model = Test_Model(4, 512, self.device)
+        self.model = Model(5, 1024, self.device)
 
         self.model = self.model.to(self.device)
 
@@ -63,7 +63,7 @@ class Trainer():
             self.load_checkpoint()
 
         self.criterion = nn.MSELoss()
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0001)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
 
     def train(self):
         bar_total = tqdm(range(self.start_epoch, self.end_epoch), desc='Training', leave=False)
@@ -76,7 +76,7 @@ class Trainer():
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
 
                 y_pred = self.model(inputs)
-                loss = self.criterion(y_pred, labels)
+                loss = self.criterion(y_pred[:, 3], labels[:, 3])
                 self.optimizer.zero_grad()
                 loss.backward()
                 if self.tpu:
@@ -129,7 +129,7 @@ class Trainer():
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
 
                 predicted = self.model(inputs)
-                loss = self.criterion(predicted, labels)
+                loss = self.criterion(predicted[:, 3], labels[:, 3])
 
                 batch_size = inputs.shape[0]
                 total_loss += loss.item() * batch_size

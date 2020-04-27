@@ -8,13 +8,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-from torch.utils.data import DataLoader
 from torch import nn
 
 import pandas as pd
 from model import Test_Model, Model
-from data_loader import DiabetesDataset, load_test_stocks
-from utils import vstack
 
 from tqdm import tqdm, trange
 
@@ -50,10 +47,10 @@ class inference:
         self.maria.commit()
 
         self.db_tables = list(i[1:] for (i, ) in self.cursor.fetchall())
-        self.db_tables = self.db_tables[:50]
-        #self.db_tables = ['005930']
-        from_date = '20190101'
-        to_date = '20200101'
+        #self.db_tables = self.db_tables[:50]
+        self.db_tables = ['005930']
+        from_date = '20191001'
+        to_date = '20200420'
 
         self.cursor.execute("SELECT date FROM _005930 WHERE " + from_date + " < date and date < " + to_date + " ORDER BY date ASC")
         self.db_dates = list(i.strftime('%Y%m%d') for (i, ) in self.cursor.fetchall())
@@ -65,10 +62,10 @@ class inference:
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
             dir = ''
 
-        checkpoint = torch.load(dir + 'models/checkpoint-epoch500.pth')
+        checkpoint = torch.load(dir + 'models/checkpoint-epoch5000.pth', map_location=torch.device('cpu'))
         state_dict = checkpoint['state_dict']
 
-        self.model = Test_Model(4, 512, self.device)
+        self.model = Model(5, 1024, self.device)
         self.model.load_state_dict(state_dict)
 
         self.model = self.model.to(self.device)
@@ -100,14 +97,22 @@ class inference:
                     self.cursor.execute("SELECT * FROM _" + item + " WHERE " + self.db_dates[i] + " < date and date < " +
                                    self.db_dates[i + 63] + " ORDER BY date ASC")
                     self.maria.commit()
-                    _data = list([open, high, low, close, volume] for (date, open, high, low, close, volume) in self.cursor.fetchall())
+                    _data = list([open, high, low, close, volume, listed_stocks] for (date, open, high, low, close, volume,
+                                                                       credit, credit_of_volume, individual,
+                                                                       institution, foreign_, program_, foreign_ratio,
+                                                                       short_balance_volume, loan_transaction,
+                                                                       listed_stocks) in self.cursor.fetchall())
                     _data = np.array(_data)
 
                     if np.shape(_data)[0] == 62 and not 0 in _data[:, -1]:
-                        _data = _data[:, :-1]
+                        #_data = _data[:, :-1]
                         _data = pd.DataFrame(_data)
+                        volume = _data[4] / _data[5]
+                        volume = volume[1:]
+                        _data = _data.drop(_data.columns[[4, 5]], axis='columns')
                         _data = _data.pct_change()
                         _data = _data[1:]
+                        _data = pd.concat([_data, volume],  axis=1)
                         _data = _data.to_numpy()
                         #_data = np.log(_data)
 
@@ -116,14 +121,15 @@ class inference:
                         stocks_list.append(item)
 
                 data = torch.FloatTensor(data).to(self.device)
-
+                print(data.shape)
                 output = self.model(data)
                 output = np.array(output)
+                output = output[:, :-1]
                 output = output[:, -1] # Close
-                real_close = (real[output.argmax()][-1])
-                self.mean_money *= (np.mean(np.array(real)[:, -1]) + 1) #1
+                real_close = (real[output.argmax()][-2])
+                self.mean_money *= (np.mean(np.array(real)[:, -2]) + 1) #1
 
-                if output.max() > data[output.argmax(), -1, -1]:
+                if output.max() > 0: #data[output.argmax(), -1, -1]
                         self.money *= (real_close + 1) #1
 
                         self.pred_yield_list.append(output.max())

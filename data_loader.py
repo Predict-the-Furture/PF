@@ -34,35 +34,52 @@ class DiabetesDataset(Dataset):
 
         if train == True:
             self.db_tables = list(i[1:] for (i, ) in self.cursor.fetchall())
-            self.db_tables = self.db_tables[:50]
-            _sql = " WHERE date < 20150101"
+            self.db_tables = ['005930']
+
+
+            _sql = " WHERE date < 20190101"
         else:
             self.db_tables = ['005930']
             _sql = " WHERE date > 20190101"
 
-        for item in tqdm(self.db_tables, desc='Count num'):
-            self.cursor.execute("SELECT COUNT(*) FROM _" + item + _sql)
-            self.maria.commit()
-            self.len += self.cursor.fetchone()[0] - 61
+        len_list = []
 
+
+        _data = []
         self.data = []
-        for item in tqdm(self.db_tables, desc='Retrieve all stock data'):
+        self.target = []
+        for i, item in tqdm(enumerate(self.db_tables), desc='Retrieve all stock data'):
             self.cursor.execute("SELECT * FROM _" + item + _sql + " ORDER BY date ASC")
             self.maria.commit()
-            self.data += list([open, high, low, close] for (_, open, high, low, close, volume) in self.cursor.fetchall())
-        #self.data = np.log(self.data)
-        #self.min_max_scaler = MinMaxScaler()
-        #self.data = self.min_max_scaler.fit_transform(self.data)
-        self.data = pd.DataFrame(self.data)
-        self.data = np.log(self.data.pct_change() + 1)
-        self.data = self.data[1:]
+            _data = list([open, high, low, close, volume, listed_stocks] for (_, open, high, low, close, volume,
+                                                       credit, credit_of_volume, individual,
+                                                       institution, foreign_, program_, foreign_ratio,
+                                                       short_balance_volume, loan_transaction,
+                                                       listed_stocks) in self.cursor.fetchall())
 
-        self.data = self.data.to_numpy()
+            #self.data = np.log(self.data)
+            #self.min_max_scaler = MinMaxScaler()
+            #self.data = self.min_max_scaler.fit_transform(self.data)
+            _data = pd.DataFrame(_data)
+            _data = _data[_data[4] != 0]
+            volume = _data[4] / _data[5]
+            volume = volume[1:]
+            _data = _data.drop(_data.columns[[4, 5]], axis='columns')
+            _data = np.log(_data.pct_change() + 1)
+            _data = _data[1:]
+            _data = pd.concat([_data, volume],  axis=1)
+            _data = _data.to_numpy()
+            len_list.append(len(_data) - 61)
 
+            for j in range(len_list[i]):
+                temp = torch.FloatTensor(_data[j: j + 61])
+                self.data.append(temp[:-1])
+                self.target.append(temp[-1])
+
+        self.len = sum(len_list)
 
     def __getitem__(self, index):
-        result = torch.FloatTensor(self.data[index: index + 61])
-        return result[:-1], result[-1]
+        return self.data[index], self.target[index]
 
     def __len__(self):
         return self.len
