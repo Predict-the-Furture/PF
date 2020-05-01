@@ -23,10 +23,10 @@ data_loader = DataLoader(dataset=dataset, batch_size=64, shuffle=False, num_work
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-checkpoint = torch.load('models/checkpoint-epoch3000.pth', map_location=torch.device('cpu'))
+checkpoint = torch.load('models/checkpoint-epoch2000.pth', map_location=torch.device('cpu'))
 state_dict = checkpoint['state_dict']
 
-model = Test_Model(4, 512, device)
+model = Model(8, 256, device)
 model.load_state_dict(state_dict)
 
 model = model.to(device)
@@ -45,8 +45,8 @@ with torch.no_grad():
 
         loss = criterion(output, target)
 
-        batch_real_data.append(target.numpy())
-        batch_predicted.append(output.numpy())
+        batch_real_data.append(target[:, 0].numpy())
+        batch_predicted.append(output[:, 0].numpy())
 
         batch_size = data.shape[0]
         total_loss += loss.item() * batch_size
@@ -65,6 +65,11 @@ real_data = np.exp(real_data)
 predicted = np.exp(predicted)
 
 print(np.shape(real_data), np.shape(predicted))
+
+plt.figure(1)
+plt.plot(real_data, color='g')
+plt.plot(predicted, color='b')
+plt.show()
 
 #real_data = list(i[0] for i in real_data)
 #predicted = list(i[0] for i in predicted)

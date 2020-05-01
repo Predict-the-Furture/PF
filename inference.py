@@ -47,7 +47,7 @@ class inference:
         self.maria.commit()
 
         self.db_tables = list(i[1:] for (i, ) in self.cursor.fetchall())
-        #self.db_tables = self.db_tables[:50]
+        self.db_tables = self.db_tables[:50]
         self.db_tables = ['005930']
         from_date = '20191001'
         to_date = '20200420'
@@ -62,10 +62,10 @@ class inference:
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
             dir = ''
 
-        checkpoint = torch.load(dir + 'models/checkpoint-epoch5000.pth', map_location=torch.device('cpu'))
+        checkpoint = torch.load(dir + 'models/checkpoint-epoch3000.pth', map_location=torch.device('cpu'))
         state_dict = checkpoint['state_dict']
 
-        self.model = Model(5, 1024, self.device)
+        self.model = Model(8, 256, self.device)
         self.model.load_state_dict(state_dict)
 
         self.model = self.model.to(self.device)
@@ -81,6 +81,7 @@ class inference:
         self.TN = 0
         self.FP = 0
         self.FN = 0
+        self.t = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
     def test(self):
         print('Data Length: {}'.format(len(self.db_dates) - 62))
@@ -97,10 +98,9 @@ class inference:
                     self.cursor.execute("SELECT * FROM _" + item + " WHERE " + self.db_dates[i] + " < date and date < " +
                                    self.db_dates[i + 63] + " ORDER BY date ASC")
                     self.maria.commit()
-                    _data = list([open, high, low, close, volume, listed_stocks] for (date, open, high, low, close, volume,
-                                                                       credit, credit_of_volume, individual,
-                                                                       institution, foreign_, program_, foreign_ratio,
-                                                                       short_balance_volume, loan_transaction,
+                    _data = list([open, high, low, close, volume, listed_stocks, credit_of_stocks, credit_of_volume, foreign_ratio]
+                                                                        for (date, open, high, low, close, volume,
+                                                                       credit_of_stocks, credit_of_volume, foreign_ratio,
                                                                        listed_stocks) in self.cursor.fetchall())
                     _data = np.array(_data)
 
@@ -109,10 +109,14 @@ class inference:
                         _data = pd.DataFrame(_data)
                         volume = _data[4] / _data[5]
                         volume = volume[1:]
-                        _data = _data.drop(_data.columns[[4, 5]], axis='columns')
+                        credit = _data[6]
+                        credit = credit[1:]
+                        credit_of_volume = _data[7][1:]
+                        foreign_ratio = _data[8][1:]
+                        _data = _data.drop([4, 5, 6, 7, 8], axis='columns')
                         _data = _data.pct_change()
                         _data = _data[1:]
-                        _data = pd.concat([_data, volume],  axis=1)
+                        _data = pd.concat([_data, volume, credit, credit_of_volume, foreign_ratio],  axis=1)
                         _data = _data.to_numpy()
                         #_data = np.log(_data)
 
@@ -121,18 +125,44 @@ class inference:
                         stocks_list.append(item)
 
                 data = torch.FloatTensor(data).to(self.device)
-                print(data.shape)
                 output = self.model(data)
                 output = np.array(output)
-                output = output[:, :-1]
-                output = output[:, -1] # Close
-                real_close = (real[output.argmax()][-2])
-                self.mean_money *= (np.mean(np.array(real)[:, -2]) + 1) #1
+                real_close = (real[output[:, 0].argmax()][3])
 
-                if output.max() > 0: #data[output.argmax(), -1, -1]
+                self.mean_money *= (np.mean(np.array(real)[:, 3]) + 1) #1
+                aa = 0
+                bb = output[output[:, 0].argmax(), 1]
+                if bb >= 0.9:
+                    aa = 0
+                elif bb >= 0.8:
+                    aa = 1
+                elif bb >= 0.7:
+                    aa = 2
+                elif bb >= 0.6:
+                    aa = 3
+                elif bb >= 0.5:
+                    aa = 4
+                elif bb >= 0.4:
+                    aa = 5
+                elif bb >= 0.3:
+                    aa = 6
+                elif bb >= 0.2:
+                    aa = 7
+                elif bb >= 0.1:
+                    aa = 8
+                elif bb > 0.:
+                    aa = 9
+                if real_close > 0:
+                    self.t[aa] += 1
+                else:
+                    self.t[aa] -= 1
+
+                # and output[output[:, 0].argmax(), 1] > 0.5
+                print( output[:, 0].max())
+                if output[:, 0].max() > 0 : #data[output.argmax(), -1, -1]
                         self.money *= (real_close + 1) #1
 
-                        self.pred_yield_list.append(output.max())
+                        self.pred_yield_list.append(output[:, 0].max())
                         self.real_yield_list.append(real_close)
 
                         if real_close > 0:
@@ -164,6 +194,11 @@ class inference:
         plt.legend()
         plt.show()
 
+        plt.figure(3)
+        plt.title("ㅅㄱㄱㄱ")
+        plt.plot(self.t)
+        plt.legend()
+        plt.show()
 
 if __name__ == '__main__':
     args = argparse.ArgumentParser(description='Trainer')

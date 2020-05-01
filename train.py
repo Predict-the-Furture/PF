@@ -55,7 +55,7 @@ class Trainer():
         self.train_loader = DataLoader(dataset=self.dataset_train, batch_size=128, shuffle=True, num_workers=0)
         self.evaluate_loader = DataLoader(dataset=self.dataset_test, batch_size=128, shuffle=False, num_workers=0)
 
-        self.model = Model(5, 1024, self.device)
+        self.model = Model(8, 256, self.device)
 
         self.model = self.model.to(self.device)
 
@@ -63,7 +63,7 @@ class Trainer():
             self.load_checkpoint()
 
         self.criterion = nn.MSELoss()
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
+        self.optimizer = torch.optim.RMSprop(self.model.parameters(), lr=0.001)
 
     def train(self):
         bar_total = tqdm(range(self.start_epoch, self.end_epoch), desc='Training', leave=False)
@@ -76,7 +76,7 @@ class Trainer():
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
 
                 y_pred = self.model(inputs)
-                loss = self.criterion(y_pred[:, 3], labels[:, 3])
+                loss = self.criterion(y_pred, labels)
                 self.optimizer.zero_grad()
                 loss.backward()
                 if self.tpu:
@@ -86,12 +86,14 @@ class Trainer():
 
                 total_loss += loss.item()
 
-            bar_total.set_description("Loss: {}".format(total_loss / len(self.train_loader)))
+            train_loss = total_loss / len(self.train_loader)
+            bar_total.set_description("Loss: {}".format(train_loss))
             bar_total.refresh()
 
             if self.epoch % self.summary_write == 0:
                 accuracy = self.evaluate()
-                self.summary.add_scalar('loss', accuracy, self.epoch)
+                self.summary.add_scalar('Train loss', train_loss, self.epoch)
+                self.summary.add_scalar('Validation loss', accuracy, self.epoch)
                 self.summary.close()
 
             if self.epoch % self.save_model == 0:
@@ -129,7 +131,7 @@ class Trainer():
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
 
                 predicted = self.model(inputs)
-                loss = self.criterion(predicted[:, 3], labels[:, 3])
+                loss = self.criterion(predicted, labels)
 
                 batch_size = inputs.shape[0]
                 total_loss += loss.item() * batch_size
@@ -145,8 +147,8 @@ if __name__ == '__main__':
     args.add_argument('-r', '--resume', default=None, type=str)
     args.add_argument('-s', '--save_dir', default='.', type=str)
     args.add_argument('-w', '--summary_write', default=100, type=int)
-    args.add_argument('-m', '--save_model', default=500, type=int)
-    args.add_argument('-e', '--end_epoch', default=1000, type=int)
+    args.add_argument('-m', '--save_model', default=1000, type=int)
+    args.add_argument('-e', '--end_epoch', default=100000, type=int)
 
     args = args.parse_args()
     trainer = Trainer(args)

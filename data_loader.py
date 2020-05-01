@@ -34,7 +34,8 @@ class DiabetesDataset(Dataset):
 
         if train == True:
             self.db_tables = list(i[1:] for (i, ) in self.cursor.fetchall())
-            self.db_tables = ['005930']
+            self.db_tables = self.db_tables[:15]
+            #self.db_tables = ['005930', '035720', '015760']
 
 
             _sql = " WHERE date < 20190101"
@@ -44,39 +45,57 @@ class DiabetesDataset(Dataset):
 
         len_list = []
 
-
-        _data = []
         self.data = []
         self.target = []
+
+        _data = []
         for i, item in tqdm(enumerate(self.db_tables), desc='Retrieve all stock data'):
             self.cursor.execute("SELECT * FROM _" + item + _sql + " ORDER BY date ASC")
             self.maria.commit()
-            _data = list([open, high, low, close, volume, listed_stocks] for (_, open, high, low, close, volume,
-                                                       credit, credit_of_volume, individual,
-                                                       institution, foreign_, program_, foreign_ratio,
-                                                       short_balance_volume, loan_transaction,
+            _data = list([open, high, low, close, volume, listed_stocks, credit_of_stocks, credit_of_volume, foreign_ratio]
+                                                        for (_, open, high, low, close, volume,
+                                                       credit_of_stocks, credit_of_volume, foreign_ratio,
                                                        listed_stocks) in self.cursor.fetchall())
 
             #self.data = np.log(self.data)
             #self.min_max_scaler = MinMaxScaler()
             #self.data = self.min_max_scaler.fit_transform(self.data)
             _data = pd.DataFrame(_data)
+
             _data = _data[_data[4] != 0]
             volume = _data[4] / _data[5]
             volume = volume[1:]
-            _data = _data.drop(_data.columns[[4, 5]], axis='columns')
+            credit = _data[6]
+            credit = credit[1:]
+            credit_of_volume = _data[7][1:]
+            foreign_ratio = _data[8][1:]
+            _data = _data.drop([4, 5, 6, 7, 8], axis='columns')
             _data = np.log(_data.pct_change() + 1)
             _data = _data[1:]
-            _data = pd.concat([_data, volume],  axis=1)
+            _data = pd.concat([_data, volume, credit, credit_of_volume, foreign_ratio],  axis=1)
             _data = _data.to_numpy()
             len_list.append(len(_data) - 61)
-
+            x = []
+            y = []
             for j in range(len_list[i]):
-                temp = torch.FloatTensor(_data[j: j + 61])
-                self.data.append(temp[:-1])
-                self.target.append(temp[-1])
+                temp = _data[j: j + 61]
+                t = temp[-1, 3]
+                #print(temp[:-1])
+                x.append(temp[:-1])
+                if t > 0:
+                    t = [t, 1]
+                else:
+                    t = [t, 0]
+
+                y.append(t)
+            self.data.extend(x)
+            self.target.extend(y)
 
         self.len = sum(len_list)
+        self.data = np.array(self.data)
+        self.target = np.array(self.target)
+        self.data = torch.from_numpy(self.data).float()
+        self.target = torch.from_numpy(self.target).float()
 
     def __getitem__(self, index):
         return self.data[index], self.target[index]
