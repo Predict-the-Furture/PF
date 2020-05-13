@@ -1,8 +1,11 @@
-import sys
+import os
 
 import torch
 import numpy as np
 import pandas as pd
+
+from PIL import Image
+from torchvision import transforms
 from torch.autograd import Variable
 from torch.utils.data import Dataset, DataLoader
 
@@ -34,7 +37,7 @@ class DiabetesDataset(Dataset):
 
         if train == True:
             self.db_tables = list(i[1:] for (i, ) in self.cursor.fetchall())
-            self.db_tables = self.db_tables[:15]
+            self.db_tables = self.db_tables[:10]
             #self.db_tables = ['005930', '035720', '015760']
 
 
@@ -72,22 +75,27 @@ class DiabetesDataset(Dataset):
             _data = _data.drop([4, 5, 6, 7, 8], axis='columns')
             _data = np.log(_data.pct_change() + 1)
             _data = _data[1:]
-            _data = pd.concat([_data, volume, credit, credit_of_volume, foreign_ratio],  axis=1)
+            #_data = pd.concat([_data, volume, credit, credit_of_volume, foreign_ratio],  axis=1)
             _data = _data.to_numpy()
             len_list.append(len(_data) - 61)
             x = []
             y = []
             for j in range(len_list[i]):
                 temp = _data[j: j + 61]
-                t = temp[-1, 3]
                 #print(temp[:-1])
                 x.append(temp[:-1])
-                if t > 0:
-                    t = [t, 1]
-                else:
-                    t = [t, 0]
 
-                y.append(t)
+                t = temp[-1, 3]
+                if t > 0.01:
+                    t = [3]
+                elif t > 0:
+                    t = [2]
+                elif t > -0.01:
+                    t = [1]
+                else:
+                    t = [0]
+
+                y.append(np.array(t))
             self.data.extend(x)
             self.target.extend(y)
 
@@ -95,7 +103,7 @@ class DiabetesDataset(Dataset):
         self.data = np.array(self.data)
         self.target = np.array(self.target)
         self.data = torch.from_numpy(self.data).float()
-        self.target = torch.from_numpy(self.target).float()
+        self.target = torch.from_numpy(self.target).long().squeeze(-1)
 
     def __getitem__(self, index):
         return self.data[index], self.target[index]
@@ -103,17 +111,33 @@ class DiabetesDataset(Dataset):
     def __len__(self):
         return self.len
 
-def load_test_stocks():
-    maria = pymysql.connect(**config)
-    cursor = maria.cursor()
-    cursor.execute("USE daily_stock")
+class DiabetesDataset_CNN(Dataset):
+    def __init__(self, train=False):
+        tables = os.listdir('dataset/')
 
-    db_tables = ['000020']
-    data = []
+        if train:
+            tables = sorted(tables[:50])
+            print(tables)
+            #tables = ['015760']
+        else:
+            tables = ['005930']
+        self.data = []
+        for item in tqdm(tables):
+            files = os.listdir('dataset/{}/'.format(item))
+            for i in files:
+                image = Image.open('dataset/{}/{}'.format(item, i)).convert('RGB')
+                image = np.array(image)
 
-    for item in tqdm(db_tables, desc='Retrieve all stock data'):
-        cursor.execute("SELECT * FROM _" + item + " ORDER BY date ASC")
-        maria.commit()
-        data += list([open, high, low, close, volume, amount] for (_, open, high, low, close, volume, amount) in cursor.fetchall())
+                self.data.append([image, int(i[11])])
 
-    return data
+        self.len = len(self.data)
+        self.transform = transforms.Compose([transforms.ToTensor(),
+                                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+
+    def __getitem__(self, index):
+        img = Image.fromarray(self.data[index][0])
+        img = self.transform(img)
+        return img, self.data[index][1]
+
+    def __len__(self):
+        return self.len

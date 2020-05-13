@@ -3,6 +3,7 @@ import time
 import importlib
 import argparse
 import torch
+import numpy as np
 
 from datetime import datetime
 from pytz import timezone
@@ -10,11 +11,12 @@ from tqdm import tqdm
 from torch.autograd import Variable
 from torch import nn
 from torch.utils.data import DataLoader
+from torchvision import transforms
 from tensorboardX import SummaryWriter
 
 from utils import folder
-from model import Model, Test_Model
-from data_loader import DiabetesDataset
+from model import CNN, Test_Model
+from data_loader import DiabetesDataset_CNN
 
 tpu_check = importlib.find_loader('torch_xla')
 if tpu_check is not None:
@@ -38,7 +40,7 @@ class Trainer():
         else:
             exit(0)
         
-        torch.manual_seed(777)
+        #torch.manual_seed(777)
 
         self.save_dir = args.save_dir
         self.start_epoch = 0
@@ -50,20 +52,20 @@ class Trainer():
 
         self.summary = SummaryWriter(self.save_dir + '/runs/' + datetime.now(timezone).strftime("%Y-%m-%d-%H%M"))
 
-        self.dataset_train = DiabetesDataset(train=True)
-        self.dataset_test = DiabetesDataset(train=False)
-        self.train_loader = DataLoader(dataset=self.dataset_train, batch_size=128, shuffle=True, num_workers=0)
-        self.evaluate_loader = DataLoader(dataset=self.dataset_test, batch_size=128, shuffle=False, num_workers=0)
+        self.dataset_train = DiabetesDataset_CNN(train=True)
+        self.dataset_test = DiabetesDataset_CNN(train=False)
+        self.train_loader = DataLoader(dataset=self.dataset_train, batch_size=32, shuffle=True, num_workers=0)
+        self.evaluate_loader = DataLoader(dataset=self.dataset_test, batch_size=32, shuffle=False, num_workers=0)
 
-        self.model = Model(8, 256, self.device)
+        self.model = CNN()
 
         self.model = self.model.to(self.device)
 
         if args.resume is not None:
             self.load_checkpoint()
 
-        self.criterion = nn.MSELoss()
-        self.optimizer = torch.optim.RMSprop(self.model.parameters(), lr=0.001)
+        self.criterion = nn.CrossEntropyLoss().to(self.device)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
 
     def train(self):
         bar_total = tqdm(range(self.start_epoch, self.end_epoch), desc='Training', leave=False)
@@ -74,7 +76,7 @@ class Trainer():
                 inputs, labels = data
                 inputs, labels = Variable(inputs), Variable(labels)
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
-
+                #inputs = inputs.transpose(1, 3)
                 y_pred = self.model(inputs)
                 loss = self.criterion(y_pred, labels)
                 self.optimizer.zero_grad()
@@ -93,7 +95,7 @@ class Trainer():
             if self.epoch % self.summary_write == 0:
                 accuracy = self.evaluate()
                 self.summary.add_scalar('Train loss', train_loss, self.epoch)
-                self.summary.add_scalar('Validation loss', accuracy, self.epoch)
+                self.summary.add_scalar('Validation accuracy', accuracy, self.epoch)
                 self.summary.close()
 
             if self.epoch % self.save_model == 0:
@@ -122,31 +124,28 @@ class Trainer():
         print("Saving checkpoint: {} ...".format(filename))
 
     def evaluate(self):
-        self.model.eval()
+        total = 0
+        correct = 0
         with torch.no_grad():
-            total_loss = 0.
             for data in self.evaluate_loader:
                 inputs, labels = data
                 inputs, labels = Variable(inputs), Variable(labels)
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
-
+                #inputs = inputs.transpose(1, 3)
                 predicted = self.model(inputs)
-                loss = self.criterion(predicted, labels)
+                _, predicted = torch.max(predicted, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
 
-                batch_size = inputs.shape[0]
-                total_loss += loss.item() * batch_size
-
-        n_samples = len(self.evaluate_loader.sampler)
-        self.model.train()
-        return total_loss / n_samples
+        return 100 * correct / total
 
 
 if __name__ == '__main__':
     args = argparse.ArgumentParser(description='Trainer')
-    args.add_argument('-d', '--device', default='cpu', type=str)
+    args.add_argument('-d', '--device', default='gpu', type=str)
     args.add_argument('-r', '--resume', default=None, type=str)
     args.add_argument('-s', '--save_dir', default='.', type=str)
-    args.add_argument('-w', '--summary_write', default=100, type=int)
+    args.add_argument('-w', '--summary_write', default=10, type=int)
     args.add_argument('-m', '--save_model', default=1000, type=int)
     args.add_argument('-e', '--end_epoch', default=100000, type=int)
 

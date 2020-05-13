@@ -23,7 +23,7 @@ data_loader = DataLoader(dataset=dataset, batch_size=64, shuffle=False, num_work
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-checkpoint = torch.load('models/checkpoint-epoch2000.pth', map_location=torch.device('cpu'))
+checkpoint = torch.load('models/checkpoint-epoch4000.pth', map_location=torch.device('cpu'))
 state_dict = checkpoint['state_dict']
 
 model = Model(8, 256, device)
@@ -33,7 +33,7 @@ model = model.to(device)
 model.eval()
 
 total_loss = 0.0
-criterion = nn.MSELoss()
+criterion = nn.CrossEntropyLoss()
 
 batch_real_data = []
 batch_predicted = []
@@ -45,8 +45,8 @@ with torch.no_grad():
 
         loss = criterion(output, target)
 
-        batch_real_data.append(target[:, 0].numpy())
-        batch_predicted.append(output[:, 0].numpy())
+        batch_real_data.append(target.numpy())
+        batch_predicted.append(output.numpy())
 
         batch_size = data.shape[0]
         total_loss += loss.item() * batch_size
@@ -57,14 +57,20 @@ with torch.no_grad():
 
 real_data = vstack(batch_real_data)
 predicted = vstack(batch_predicted)
+print(predicted)
+d = 0
+for i in range(len(real_data)):
+    print(predicted[i])
+    if real_data[i] == np.argmax(predicted[i]):
+        d += 1
 
+print(d / len(real_data) * 100)
 #real_data = dataset.min_max_scaler.inverse_transform(real_data)
 #predicted = dataset.min_max_scaler.inverse_transform(predicted)
 
 real_data = np.exp(real_data)
 predicted = np.exp(predicted)
 
-print(np.shape(real_data), np.shape(predicted))
 
 plt.figure(1)
 plt.plot(real_data, color='g')
